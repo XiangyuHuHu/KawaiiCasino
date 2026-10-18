@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#17101f" />
+    <meta
+      name="description"
+      content="Kawaii Casino — 和朋友围坐一桌，享受像素风德州扑克。支持局域网多人联机。"
+    />
+    <title>Kawaii Casino · 今晚，来一手</title>
+    <link rel="icon" href="/favicon.svg" />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Kawaii Casino 首页"
+        ><span class="brand-icon">♠</span
+        ><span>KAWAII<span class="brand-sub">CASINO CLUB</span></span></a
+      >
+      <nav aria-label="游戏">
+        <span class="nav-active">德州扑克 <i>TEXAS HOLD’EM</i></span
+        ><span class="coming">更多游戏 <small>SOON</small></span>
+      </nav>
+      <div class="connection">
+        <span id="connection-dot" class="dot"></span
+        ><span id="connection-text">连接中</span
+        ><button id="rules-button" class="icon-button" aria-label="游戏规则">
+          ?
+        </button>
+      </div>
+    </header>
+    <main class="layout">
+      <section class="game" aria-label="德州扑克牌桌">
+        <div class="table-toolbar">
+          <div>
+            <span class="live-tag">FRIENDS TABLE</span
+            ><span id="room-label">朋友小局 · 开放入座</span>
+          </div>
+          <div class="table-tools">
+            <button id="invite-button" class="text-button" hidden>
+              ↗ 邀请朋友</button
+            ><button
+              id="sound-button"
+              class="icon-button"
+              aria-label="开启音效"
+              title="音效"
+            >
+              ♪</button
+            ><button id="leave-button" class="text-button" hidden>离开</button>
+          </div>
+        </div>
+        <div class="table-scene" id="table-scene">
+          <div class="ambient ambient-one"></div>
+          <div class="ambient ambient-two"></div>
+          <span class="spark spark-one">✦</span
+          ><span class="spark spark-two">✧</span
+          ><span class="spark spark-three">✦</span>
+          <div class="rail">
+            <div class="felt">
+              <div class="felt-line"></div>
+              <span class="felt-suit suit-one">♠</span
+              ><span class="felt-suit suit-two">♣</span>
+              <div class="table-wordmark">KAWAII <span>CASINO</span></div>
+            </div>
+          </div>
+          <div id="board-area" class="board-area"></div>
+          <div id="seats" class="seats"></div>
+          <div class="table-caption">
+            <span>✧</span> GOOD FRIENDS. GOOD HANDS. <span>✧</span>
+          </div>
+        </div>
+        <div id="action-area" class="action-area"></div>
+        <footer class="game-footer">
+          <span>♧ 仅限虚拟筹码 · 好玩就好</span
+          ><span id="hand-label">NO PRESSURE, JUST POKER.</span>
+        </footer>
+      </section>
+      <aside class="sidebar">
+        <section class="room-panel" id="room-panel"></section>
+        <section class="pot-panel">
+          <div class="panel-heading">
+            <span>♠ 牌桌概况</span
+            ><span id="stage-label" class="pill">等待开局</span>
+          </div>
+          <div class="pot-total">
+            <span class="chip-icon">✦</span>
+            <div>
+              <small>TOTAL POT · 总底池</small><strong id="pot-value">0</strong>
+            </div>
+          </div>
+          <div class="table-stats">
+            <div><small>盲注</small><b id="blind-value">50 / 100</b></div>
+            <div><small>我的筹码</small><b id="stack-value">—</b></div>
+            <div><small>在线玩家</small><b id="players-value">0 / 8</b></div>
+          </div>
+        </section>
+        <section class="chat-panel">
+          <div class="tabs" role="tablist" aria-label="牌桌消息">
+            <button
+              id="chat-tab"
+              class="active"
+              role="tab"
+              aria-selected="true"
+            >
+              牌桌聊天 <span>◌</span></button
+            ><button id="history-tab" role="tab" aria-selected="false">
+              牌局记录
+            </button>
+          </div>
+          <div
+            id="chat-content"
+            class="chat-content"
+            role="log"
+            aria-live="polite"
+          ></div>
+          <form id="chat-form" class="chat-form">
+            <input
+              id="chat-input"
+              maxlength="200"
+              autocomplete="off"
+              aria-label="聊天消息"
+              placeholder="和牌友打个招呼…"
+              disabled
+            /><button
+              id="chat-send"
+              type="submit"
+              aria-label="发送消息"
+              disabled
+            >
+              ↗
+            </button>
+          </form>
+        </section>
+        <div class="sidebar-footer">
+          <span class="tiny-star">✦</span> A LITTLE LUCK, A LOT OF FUN.
+        </div>
+      </aside>
+    </main>
+    <dialog id="room-dialog">
+      <form id="room-form">
+        <button type="button" class="dialog-close" data-close aria-label="关闭">
+          ×</button
+        ><span class="eyebrow">YOUR SEAT IS WAITING</span>
+        <h1 id="dialog-title">开一桌，等朋友。</h1>
+        <p class="muted">同一个 Wi-Fi，一张牌桌。今晚好运属于谁？</p>
+        <label for="nickname">你的昵称</label
+        ><input
+          id="nickname"
+          maxlength="16"
+          required
+          placeholder="起个牌桌上的名字"
+          autocomplete="nickname"
+        /><label>选择你的像素搭子</label>
+        <div id="avatar-options" class="avatar-options"></div>
+        <div id="join-fields" hidden>
+          <label for="room-code">六位房间号</label
+          ><input
+            id="room-code"
+            inputmode="numeric"
+            pattern="[0-9]{6}"
+            maxlength="6"
+            placeholder="例如 123456"
+          />
+        </div>
+        <div id="create-fields" class="form-grid">
+          <div>
+            <label for="blind-select">小盲 / 大盲</label
+            ><select id="blind-select">
+              <option value="25">25 / 50 · 轻松局</option>
+              <option value="50" selected>50 / 100 · 标准局</option>
+              <option value="100">100 / 200 · 快节奏</option>
+            </select>
+          </div>
+          <div>
+            <label for="stack-select">初始筹码</label
+            ><select id="stack-select">
+              <option value="5000">5,000</option>
+              <option value="10000" selected>10,000</option>
+              <option value="20000">20,000</option>
+            </select>
+          </div>
+        </div>
+        <p id="form-error" class="form-error" role="alert"></p>
+        <button id="room-submit" class="primary wide" type="submit">
+          创建房间 <span>↗</span>
+        </button>
+        <p class="form-note">2–8 人 · 无需注册 · 虚拟筹码</p>
+      </form>
+    </dialog>
+    <dialog id="rules-dialog">
+      <button class="dialog-close" data-close aria-label="关闭">×</button
+      ><span class="eyebrow">A QUICK GUIDE</span>
+      <h1>好牌，从这里开始。</h1>
+      <p>
+        每人两张底牌，与桌面五张公共牌组成最强的五张牌。下注依次经历翻牌前、翻牌、转牌和河牌。
+      </p>
+      <ol class="rules-list">
+        <li><b>过牌 / 跟注</b><span>无人下注时过牌，或跟上当前下注。</span></li>
+        <li>
+          <b>加注 / 全下</b
+          ><span
+            >加注金额是本轮总下注额；全下投入剩余筹码。短码全下自动计算边池。</span
+          >
+        </li>
+        <li><b>弃牌</b><span>放弃本手牌，已投入的筹码留在底池。</span></li>
+      </ol>
+      <p class="rank-guide">
+        同花顺 › 四条 › 葫芦 › 同花 › 顺子 › 三条 › 两对 › 一对 › 高牌
+      </p>
+      <p class="muted">
+        每次行动限时 35
+        秒，超时自动过牌或弃牌。断线可在原标签页重连；新玩家从下一手入局。房主点击发牌开始每一手，筹码不足可在手牌结束后补充。
+      </p>
+      <p class="muted">
+        房间保存在启动服务的电脑内存中，重启会清空。游戏只使用虚拟积分。
+      </p>
+      <button class="primary wide" data-close>明白了，入座吧 ♠</button>
+    </dialog>
+    <dialog id="invite-dialog">
+      <button class="dialog-close" data-close aria-label="关闭">×</button
+      ><span class="eyebrow">THE MORE, THE MERRIER</span>
+      <h1>好朋友，就差你。</h1>
+      <p class="muted">朋友先连接同一个 Wi-Fi，再打开下方地址。</p>
+      <div id="invite-details"></div>
+      <p class="muted">
+        如果打不开，请确认主机防火墙允许 Node.js
+        访问专用网络，并关闭路由器的客户端隔离。
+      </p>
+      <button id="copy-invite" class="primary wide">复制邀请信息 ↗</button>
+    </dialog>
+    <div id="toast" class="toast" role="status"></div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "name": "kawaii-casino",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A cozy pixel Texas Hold'em table for friends on your LAN.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test test/*.test.js",
+    "test:browser": "playwright test",
+    "format": "prettier --write public server test playwright.config.js package.json .github/workflows/test.yml",
+    "format:check": "prettier --check public server test playwright.config.js package.json .github/workflows/test.yml",
+    "check": "node --check server/index.js && node --check server/poker.js && node --check public/app.js"
+  },
+  "dependencies": {
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "prettier": "^3.9.10",
+    "socket.io-client": "^4.8.1"
+  }
+}
