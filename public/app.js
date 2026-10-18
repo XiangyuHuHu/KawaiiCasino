@@ -16,7 +16,8 @@ let state = null,
   online = false,
   sound = false,
   inviteText = "",
-  lastTurn = "";
+  lastTurn = "",
+  gameCatalog = [];
 const fmt = (n) => new Intl.NumberFormat("en-US").format(n);
 const esc = (s) =>
   String(s ?? "").replace(
@@ -512,6 +513,14 @@ $("#rules-button").onclick = () =>
             ? "#blackjack-rules-dialog"
             : "#rules-dialog",
   ).showModal();
+const updateGameRulesTip = () => {
+  const game = gameCatalog.find((g) => g.gameType === $("#game-select").value);
+  const tip = $("#game-rules-tip");
+  const blurb = game?.blurb || "";
+  tip.textContent = blurb;
+  tip.hidden = !blurb;
+  $("#game-select").title = blurb;
+};
 $("#game-select").onchange = () => {
   const blackjack = $("#game-select").value === "blackjack";
   const doudizhu = $("#game-select").value === "doudizhu";
@@ -520,6 +529,7 @@ $("#game-select").onchange = () => {
   $("#blind-fields").hidden = blackjack || doudizhu || mahjong || guandan;
   $("#room-form .form-note").textContent =
     `${guandan ? "4 人组队 · 底分 10" : mahjong ? "4 人 · 底分 10" : doudizhu ? "3 人 · 底分 10" : blackjack ? "1–5 人 · 最低下注 10" : "2–8 人"} · 无需注册 · 虚拟筹码`;
+  updateGameRulesTip();
 };
 $("#invite-button").onclick = showInvite;
 $("#copy-invite").onclick = async () => {
@@ -615,11 +625,16 @@ for (const dialog of document.querySelectorAll("dialog"))
 fetch("/api/games")
   .then((r) => r.json())
   .then((games) => {
+    gameCatalog = games;
     const selected = $("#game-select").value;
     $("#game-select").innerHTML = games
-      .map((g) => `<option value="${esc(g.gameType)}">${esc(g.name)}</option>`)
+      .map(
+        (g) =>
+          `<option value="${esc(g.gameType)}" title="${esc(g.blurb || "")}">${esc(g.name)}</option>`,
+      )
       .join("");
     $("#game-select").value = selected;
+    updateGameRulesTip();
   })
   .catch(() => {});
 render();

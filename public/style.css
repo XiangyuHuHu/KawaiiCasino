@@ -1777,6 +1777,12 @@ dialog .muted {
 .game-select-field {
   grid-column: 1 / -1;
 }
+.game-rules-tip {
+  margin: 8px 0 0;
+  color: #bca5cd;
+  font-size: 11px;
+  line-height: 1.6;
+}
 .blackjack .board-area {
   top: 5%;
   width: 90%;

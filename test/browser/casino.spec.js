@@ -1,5 +1,25 @@
 import { test, expect } from "@playwright/test";
 import { createCasino } from "../../server/index.js";
+
+async function chipSum(page, selector) {
+  const texts = await page.locator(selector).allTextContents();
+  expect(texts.length).toBeGreaterThan(0);
+  const amounts = texts.map((text) => {
+    const match = text.match(/◈\s*(-?[\d,]+)/);
+    expect(match, text).toBeTruthy();
+    return Number(match[1].replaceAll(",", ""));
+  });
+  for (const amount of amounts) expect(amount).toBeGreaterThanOrEqual(0);
+  return amounts.reduce((sum, amount) => sum + amount, 0);
+}
+
+async function blackjackLedger(page) {
+  const players = await chipSum(page, ".bj-seat .seat-stack");
+  const houseText = await page.locator("#board-area .hand-hint").innerText();
+  const house = houseText.match(/庄家累计净盈亏\s*(-?[\d,]+)/);
+  expect(house, houseText).toBeTruthy();
+  return players + Number(house[1].replaceAll(",", ""));
+}
 test("两位真实玩家入座、聊天、防注入、完成对局并刷新恢复", async ({
   browser,
 }) => {
@@ -119,10 +139,12 @@ test("21点：手机建房选游戏、单人下注停牌、结算和刷新恢复
   await page.locator('[data-command="create"]').first().click();
   await page.getByLabel("你的昵称").fill("21点玩家");
   await page.getByLabel("选择游戏").selectOption("blackjack");
+  await expect(page.locator("#game-rules-tip")).toContainText("3:2");
   await expect(page.locator("#blind-fields")).not.toBeVisible();
   await page.locator("#room-submit").click();
   await expect(page.locator("#room-label")).toContainText("21点");
   await expect(page.locator("#players-value")).toHaveText("1 / 5");
+  const openingLedger = await blackjackLedger(page);
   await page.getByRole("button", { name: "开始发牌" }).click();
   await page.getByLabel("21点下注金额").fill("11");
   await page.locator('[data-action="bet"]').click();
@@ -141,6 +163,7 @@ test("21点：手机建房选游戏、单人下注停牌、结算和刷新恢复
   await expect(page.locator("#stage-label")).toHaveText("本手结束");
   await expect(page.locator(".bj-outcome")).toContainText("净");
   await expect(page.locator("#board-area .card.back")).toHaveCount(0);
+  expect(await blackjackLedger(page)).toBe(openingLedger);
   await page.reload();
   await expect(page.locator("#room-label")).toContainText("21点");
   await expect(page.locator(".bj-outcome")).toBeVisible();
@@ -174,6 +197,7 @@ test("斗地主：手机选游戏、添加两位伙伴、点击选牌并完成�
     await expect(page.getByRole("button", { name: "开始发牌" })).toBeDisabled();
     await page.getByRole("button", { name: "练习伙伴" }).click();
     await expect(page.locator("#players-value")).toHaveText("3 / 3");
+    const openingStacks = await chipSum(page, ".ddz-seat .seat-stack");
     casino.rooms.values().next().value.table.nextFirstBidder = 0;
     await page.getByRole("button", { name: "开始发牌" }).click();
     await expect(page.locator(".ddz-seat.me .ddz-card")).toHaveCount(17);
@@ -238,16 +262,7 @@ test("斗地主：手机选游戏、添加两位伙伴、点击选牌并完成�
     await expect(page.locator(".result-banner")).toContainText("获胜");
     await expect(page.locator(".result-banner")).toContainText("每份");
     await expect(page.locator(".ddz-seat:not(.me) .card.back")).toHaveCount(0);
-    const stacks = await page
-      .locator(".ddz-seat .seat-stack")
-      .allTextContents();
-    expect(
-      stacks.reduce(
-        (sum, text) =>
-          sum + Number(text.match(/◈ ([\d,]+)/)[1].replaceAll(",", "")),
-        0,
-      ),
-    ).toBe(30000);
+    expect(await chipSum(page, ".ddz-seat .seat-stack")).toBe(openingStacks);
     await expect
       .poll(() =>
         page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
@@ -283,6 +298,7 @@ test("麻将：手机选择游戏、定缺、点选出牌、三位机器人完�
     await expect(page.getByRole("button", { name: "开始发牌" })).toBeDisabled();
     await page.getByRole("button", { name: "练习伙伴" }).click();
     await expect(page.locator("#players-value")).toHaveText("4 / 4");
+    const openingStacks = await chipSum(page, ".mj-seat .seat-stack");
     await page.getByRole("button", { name: "开始发牌" }).click();
     await expect(page.locator(".mj-seat.me .mj-select")).toHaveCount(14);
     await expect(page.locator(".mj-seat:not(.me) .mj-tile.back")).toHaveCount(
@@ -331,7 +347,8 @@ test("麻将：手机选择游戏、定缺、点选出牌、三位机器人完�
     );
     expect(t.result).toHaveLength(4);
     expect(t.result.reduce((n, r) => n + r.net, 0)).toBe(0);
-    expect(t.players.reduce((n, p) => n + p.stack, 0)).toBe(40000);
+    expect(t.players.reduce((n, p) => n + p.stack, 0)).toBe(openingStacks);
+    expect(await chipSum(page, ".mj-seat .seat-stack")).toBe(openingStacks);
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -371,6 +388,7 @@ test("掼蛋：手机选游戏、三位伙伴、点选出牌、完整结算、�
     await expect(page.getByRole("button", { name: "开始发牌" })).toBeDisabled();
     await page.getByRole("button", { name: "练习伙伴" }).click();
     await expect(page.locator("#players-value")).toHaveText("4 / 4");
+    const openingStacks = await chipSum(page, ".gd-seat .seat-stack");
     await page.getByRole("button", { name: "开始发牌" }).click();
     await expect(page.locator(".gd-seat.me .gd-card")).toHaveCount(27);
     await expect(page.locator(".gd-seat:not(.me) .card.back")).toHaveCount(3);
@@ -429,8 +447,9 @@ test("掼蛋：手机选游戏、三位伙伴、点选出牌、完整结算、�
     await expect(page.locator(".gd-seat:not(.me) .card.back")).toHaveCount(0);
     const t = casino.rooms.values().next().value.table;
     expect(t.result.reduce((n, r) => n + r.net, 0)).toBe(0);
-    expect(t.players.reduce((n, p) => n + p.stack, 0)).toBe(40000);
+    expect(t.players.reduce((n, p) => n + p.stack, 0)).toBe(openingStacks);
     expect(t.players.every((p) => p.stack >= 0)).toBe(true);
+    expect(await chipSum(page, ".gd-seat .seat-stack")).toBe(openingStacks);
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,

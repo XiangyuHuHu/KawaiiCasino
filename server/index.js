@@ -21,10 +21,23 @@ const files = {
   "/style.css": ["style.css", "text/css; charset=utf-8"],
   "/favicon.svg": ["favicon.svg", "image/svg+xml"],
 };
+const STALE_ACTION = "牌局已更新，请重新操作";
+const BURST_LIMIT = 40;
+// Host round controls stay available after a fast assist burst.
+const BURST_EXEMPT = new Set(["deal", "start", "next"]);
+
+function envMillis(name, fallback) {
+  const raw = process.env[name];
+  if (raw == null || String(raw).trim() === "") return fallback;
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value < 0) return fallback;
+  return value;
+}
+
 export function createCasino({
-  botDelay = 1000,
+  botDelay = envMillis("BOT_DELAY_MS", 1000),
   tickInterval = 300,
-  actionTimeout = 35000,
+  actionTimeout = envMillis("ACTION_TIMEOUT_MS", 35000),
 } = {}) {
   const rooms = new Map();
   const server = http.createServer(async (req, res) => {
@@ -104,16 +117,23 @@ export function createCasino({
     const event = (name, handler) =>
       socket.on(name, (input = {}, ack = () => {}) => {
         if (typeof ack !== "function") ack = () => {};
+        let consumed = false;
         try {
-          if (Date.now() - windowStart > 1000) {
+          const now = Date.now();
+          if (now - windowStart >= 1000) {
             hits = 0;
-            windowStart = Date.now();
+            windowStart = now;
           }
-          if (++hits > 25) throw new Error("操作太快了，稍等一下");
+          if (!BURST_EXEMPT.has(name)) {
+            if (hits >= BURST_LIMIT) throw new Error("操作太快了，稍等一下");
+            hits += 1;
+            consumed = true;
+          }
           if (!input || typeof input !== "object" || Array.isArray(input))
             throw new Error("请求格式无效");
           ack({ ok: true, ...handler(input) });
         } catch (error) {
+          if (consumed && error.message === STALE_ACTION) hits -= 1;
           ack({ ok: false, error: error.message });
         }
       });
@@ -215,7 +235,7 @@ export function createCasino({
         input.version !== room.table.version ||
         input.hand !== room.table.hand
       )
-        throw new Error("牌局已更新，请重新操作");
+        throw new Error(STALE_ACTION);
       room.table.action(player.id, input);
       emit(room);
     });

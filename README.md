@@ -178,4 +178,4 @@ start-casino.cmd         Windows 启动入口
 
 Socket.IO 的 `create` 支持 `{ name, gameType, stack, ... }`，省略游戏保持原德州扑克行为。`deal` / `start` / `next` 都由房主开始下一手；`action` 统一传 `{ type, amount?, hand, version }`，旧版扑克动作继续有效，21点动作是 `bet`、`hit`、`stand`、`double`、`split`；斗地主动作是 `bid`（`amount: 0/1/2/3`）、`play`（`cards: [手牌 id, ...]`）、`pass`、`assist`（帮我一步）。麻将动作是 `void`（`suit: "wan"/"tiao"/"tong"`）、`discard`（`tile: 手牌 id`）、`hu`、`pong`、`kong`、`concealedKong` / `addedKong`（`tile: 要杠的手牌 id`）、`pass`、`assist`；`legal` 返回可出牌 id 和合法杠选项。掼蛋动作是 `play`（`cards: [手牌 id, ...]`）、`pass`、`assist`；两副相同牌面有不同 id，不能重复提交同一张。`bots`、`rebuy`、聊天、加入、恢复与离开共用房间流程。新增游戏桌面在浏览器渲染表中注册，并把静态模块加入服务器 `files` 映射，保留现有 CSP。
 
-测试可用 `createCasino({ botDelay: 0, tickInterval: 5, actionTimeout: 35000 })` 配置机器人延迟、轮询间隔和各游戏行动时限；实际运行默认机器人延迟 1 秒、轮询 300 毫秒、行动 35 秒。实现只使用 ES2023 及更早的语言特性，可在本地 Node 20 检查；项目推荐与声明版本仍为 Node >=22。
+测试可用 `createCasino({ botDelay: 0, tickInterval: 5, actionTimeout: 35000 })` 配置机器人延迟、轮询间隔和各游戏行动时限；实际运行默认机器人延迟 1 秒、轮询 300 毫秒、行动 35 秒。未传入这两项时，分别读取环境变量 `BOT_DELAY_MS` 与 `ACTION_TIMEOUT_MS`（非负整数；空值或非法值回退默认，`0` 表示机器人在下一轮询立即行动）。显式参数优先于环境变量。实现只使用 ES2023 及更早的语言特性，可在本地 Node 20 检查；项目推荐与声明版本仍为 Node >=22。

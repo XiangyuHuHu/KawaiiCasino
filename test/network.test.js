@@ -210,6 +210,9 @@ test("21点 Socket.IO：注册表、机器人自动下注、完整结算、补�
       metadata.map((g) => g.gameType),
       ["poker", "blackjack", "doudizhu", "mahjong", "guandan"],
     );
+    assert.ok(
+      metadata.every((g) => typeof g.blurb === "string" && g.blurb.length > 8),
+    );
     const module = await fetch(`${url}/games/blackjack.js`);
     assert.equal(module.status, 200);
     assert.match(
@@ -590,6 +593,162 @@ test("掼蛋 Socket.IO：四席、三位伙伴、手牌隐私、动作校验、�
     );
   } finally {
     s.disconnect();
+    await new Promise((r) => casino.io.close(r));
+  }
+});
+
+function restoreEnv(name, value) {
+  if (value === undefined) delete process.env[name];
+  else process.env[name] = value;
+}
+
+test("BOT_DELAY_MS 与 ACTION_TIMEOUT_MS 进入 createCasino 默认值，显式参数优先", async () => {
+  const previous = {
+    delay: process.env.BOT_DELAY_MS,
+    timeout: process.env.ACTION_TIMEOUT_MS,
+  };
+  process.env.BOT_DELAY_MS = "0";
+  process.env.ACTION_TIMEOUT_MS = "8000";
+  const fast = createCasino({ tickInterval: 5 });
+  process.env.BOT_DELAY_MS = "nope";
+  process.env.ACTION_TIMEOUT_MS = "-3";
+  const fallback = createCasino({ tickInterval: 20 });
+  const explicit = createCasino({
+    botDelay: 60000,
+    actionTimeout: 4321,
+    tickInterval: 5,
+  });
+  restoreEnv("BOT_DELAY_MS", previous.delay);
+  restoreEnv("ACTION_TIMEOUT_MS", previous.timeout);
+  const servers = [fast, fallback, explicit];
+  const sockets = [];
+  const connect = async (casino) => {
+    const s = io(`http://127.0.0.1:${casino.server.address().port}`, {
+      transports: ["websocket"],
+      forceNew: true,
+    });
+    sockets.push(s);
+    s.on("state", (v) => (s.state = v));
+    await new Promise((r) => s.once("connect", r));
+    return s;
+  };
+  const send = (s, event, data = {}) =>
+    s.timeout(3000).emitWithAck(event, data);
+  const waitFor = async (fn) => {
+    for (let i = 0; i < 100; i++) {
+      if (fn()) return;
+      await new Promise((r) => setTimeout(r, 10));
+    }
+    assert.fail("等待机器人行动超时");
+  };
+  try {
+    await Promise.all(
+      servers.map(
+        (casino) => new Promise((r) => casino.server.listen(0, "127.0.0.1", r)),
+      ),
+    );
+    const fastSocket = await connect(fast);
+    const created = await send(fastSocket, "create", {
+      name: "练习",
+      gameType: "blackjack",
+    });
+    assert.equal(fast.rooms.get(created.code).table.actionTimeout, 8000);
+    assert.ok((await send(fastSocket, "bots")).ok);
+    assert.ok((await send(fastSocket, "deal")).ok);
+    await waitFor(() => fastSocket.state?.legal?.actions?.includes("bet"));
+    assert.ok(
+      (
+        await send(fastSocket, "action", {
+          type: "bet",
+          amount: 10,
+          hand: fastSocket.state.hand,
+          version: fastSocket.state.version,
+        })
+      ).ok,
+    );
+    const started = Date.now();
+    await waitFor(() =>
+      fastSocket.state.players.some((p) => p.bot && p.hands.length === 1),
+    );
+    assert.ok(Date.now() - started < 1000);
+
+    const fallbackSocket = await connect(fallback);
+    const fallbackRoom = await send(fallbackSocket, "create", {
+      name: "回退",
+      gameType: "blackjack",
+    });
+    assert.equal(
+      fallback.rooms.get(fallbackRoom.code).table.actionTimeout,
+      35000,
+    );
+
+    const slowSocket = await connect(explicit);
+    const slowRoom = await send(slowSocket, "create", {
+      name: "慢速",
+      gameType: "blackjack",
+    });
+    assert.equal(explicit.rooms.get(slowRoom.code).table.actionTimeout, 4321);
+    assert.ok((await send(slowSocket, "bots")).ok);
+    assert.ok((await send(slowSocket, "deal")).ok);
+    await waitFor(() => slowSocket.state?.legal?.actions?.includes("bet"));
+    assert.ok(
+      (
+        await send(slowSocket, "action", {
+          type: "bet",
+          amount: 10,
+          hand: slowSocket.state.hand,
+          version: slowSocket.state.version,
+        })
+      ).ok,
+    );
+    await new Promise((r) => setTimeout(r, 250));
+    assert.equal(
+      slowSocket.state.players.some((p) => p.bot && p.hands.length === 1),
+      false,
+    );
+  } finally {
+    sockets.forEach((s) => s.disconnect());
+    await Promise.all(
+      servers.map((casino) => new Promise((r) => casino.io.close(r))),
+    );
+  }
+});
+
+test("过期动作不占突发名额，下一手在限额打满后仍可开始", async () => {
+  const casino = createCasino();
+  await new Promise((r) => casino.server.listen(0, "127.0.0.1", r));
+  const socket = io(`http://127.0.0.1:${casino.server.address().port}`, {
+    transports: ["websocket"],
+    forceNew: true,
+  });
+  socket.on("state", (v) => (socket.state = v));
+  const send = (event, data = {}) =>
+    socket.timeout(3000).emitWithAck(event, data);
+  try {
+    await new Promise((r) => socket.once("connect", r));
+    assert.ok((await send("create", { name: "限流" })).ok);
+    for (let i = 0; i < 30; i++) {
+      const stale = await send("action", {
+        type: "check",
+        hand: 99,
+        version: -1,
+      });
+      assert.equal(stale.ok, false);
+      assert.equal(stale.error, "牌局已更新，请重新操作");
+    }
+    // create already used one slot; stale retries above must not use the rest.
+    for (let i = 0; i < 39; i++) {
+      const invalid = await send("action", []);
+      assert.equal(invalid.ok, false);
+      assert.equal(invalid.error, "请求格式无效");
+    }
+    const limited = await send("action", []);
+    assert.equal(limited.ok, false);
+    assert.equal(limited.error, "操作太快了，稍等一下");
+    const next = await send("next");
+    assert.equal(next.error, "至少需要两位有筹码的在线玩家");
+  } finally {
+    socket.disconnect();
     await new Promise((r) => casino.io.close(r));
   }
 });
