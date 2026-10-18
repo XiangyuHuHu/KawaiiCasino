@@ -1,5 +1,6 @@
 /* global io */
 import { renderBlackjack } from "./games/blackjack.js";
+import { renderDoudizhu, selectedCards, toggleCard } from "./games/doudizhu.js";
 const $ = (selector) => document.querySelector(selector);
 const socket = io({ autoConnect: false });
 let state = null,
@@ -22,6 +23,7 @@ const esc = (s) =>
 const stages = {
   waiting: "等待开局",
   betting: "下注阶段",
+  bidding: "叫分阶段",
   playing: "玩家行动",
   preflop: "翻牌前",
   flop: "翻牌",
@@ -46,8 +48,11 @@ function avatar(index = 0) {
 function card(c, empty = false) {
   if (empty) return '<span class="card empty" aria-label="等待公共牌">♧</span>';
   if (!c) return '<span class="card back" aria-label="未公开的底牌">✧</span>';
-  const rank = { 11: "J", 12: "Q", 13: "K", 14: "A" }[c.rank] || c.rank;
-  const suit = { s: "♠", h: "♥", d: "♦", c: "♣" }[c.suit];
+  const rank =
+    { 11: "J", 12: "Q", 13: "K", 14: "A", 15: "2", 16: "小王", 17: "大王" }[
+      c.rank
+    ] || c.rank;
+  const suit = { s: "♠", h: "♥", d: "♦", c: "♣", j: "★" }[c.suit];
   return `<span class="card ${["h", "d"].includes(c.suit) ? "red" : ""}" aria-label="${suit}${rank}"><span class="rank">${rank}</span><span class="suit">${suit}</span><span class="center-suit">${suit}</span><span class="card-corner">${rank}${suit}</span></span>`;
 }
 let toastTimer;
@@ -130,7 +135,9 @@ function render() {
   const host = state?.hostId === state?.me;
   const playing = state && !["waiting", "showdown"].includes(state.stage);
   const blackjack = state?.gameType === "blackjack";
+  const doudizhu = state?.gameType === "doudizhu";
   const maxPlayers = state?.game?.maxPlayers || 8;
+  $("#table-scene").classList.toggle("doudizhu", doudizhu);
   $("#table-scene").classList.toggle("blackjack", blackjack);
   $("#game-name").textContent = state?.game?.name || "游戏大厅";
   $(".game").setAttribute("aria-label", `${state?.game?.name || "游戏"}牌桌`);
@@ -146,15 +153,23 @@ function render() {
     : "NO PRESSURE, JUST POKER.";
   $("#stage-label").textContent = state ? stages[state.stage] : "等待开局";
   $("#pot-value").textContent = fmt(state?.pot || 0);
-  $("#pot-caption").textContent = blackjack
-    ? "TOTAL BETS · 本手总下注"
-    : "TOTAL POT · 总底池";
-  $("#blind-caption").textContent = blackjack ? "最低下注" : "盲注";
-  $("#blind-value").textContent = blackjack
-    ? fmt(state.minBet)
-    : state
-      ? `${fmt(state.smallBlind)} / ${fmt(state.bigBlind)}`
-      : "50 / 100";
+  $("#pot-caption").textContent = doudizhu
+    ? "SCORE · 当前每份分值"
+    : blackjack
+      ? "TOTAL BETS · 本手总下注"
+      : "TOTAL POT · 总底池";
+  $("#blind-caption").textContent = doudizhu
+    ? "底分"
+    : blackjack
+      ? "最低下注"
+      : "盲注";
+  $("#blind-value").textContent = doudizhu
+    ? fmt(state.baseStake)
+    : blackjack
+      ? fmt(state.minBet)
+      : state
+        ? `${fmt(state.smallBlind)} / ${fmt(state.bigBlind)}`
+        : "50 / 100";
   $("#stack-value").textContent = me ? fmt(me.stack) : "—";
   $("#players-value").textContent =
     `${state?.players.filter((p) => p.connected && !p.left).length || 0} / ${maxPlayers}`;
@@ -165,10 +180,12 @@ function render() {
       '<span class="panel-decoration">✧</span><span class="eyebrow">WELCOME TO THE CLUB</span><h2>今晚，来一手。</h2><p>把好运留在牌桌，<br>把快乐分享给朋友。</p><button class="primary wide" data-command="create">创建房间 <span>＋</span></button><button class="secondary wide" data-command="join">加入朋友的牌桌 <span>↗</span></button>';
   } else {
     $("#room-panel").innerHTML =
-      `<span class="panel-decoration">✧</span><span class="eyebrow">MAKE YOURSELF AT HOME</span><div class="room-code-display"><small>房间号 · ${host ? "你是房主" : "朋友的牌桌"}</small>${state.code}</div><p>${playing ? "牌局进行中，好运正在路上。" : "朋友到齐，随时可以开始。"}</p><button class="primary wide" data-command="deal" ${!host || playing || !online || state.players.filter((p) => p.connected && p.stack >= (blackjack ? state.minBet : 1) && !p.left).length < (state.game?.minPlayers || 2) ? "disabled" : ""}>${playing ? "牌局进行中" : host ? (state.hand ? "再来一手" : "开始发牌") : "等待房主发牌"} <span>♠</span></button><div class="room-controls">${host ? `<button data-command="bots" ${playing || !online || state.players.length >= maxPlayers ? "disabled" : ""}>＋ 练习伙伴</button>` : ""}<button data-command="rebuy" ${playing || !online || me.stack >= state.buyIn ? "disabled" : ""}>补充筹码</button><button data-command="invite">邀请朋友 ↗</button></div>`;
+      `<span class="panel-decoration">✧</span><span class="eyebrow">MAKE YOURSELF AT HOME</span><div class="room-code-display"><small>房间号 · ${host ? "你是房主" : "朋友的牌桌"}</small>${state.code}</div><p>${playing ? "牌局进行中，好运正在路上。" : "朋友到齐，随时可以开始。"}</p><button class="primary wide" data-command="deal" ${!host || playing || !online || state.players.filter((p) => p.connected && p.stack >= (doudizhu ? state.baseStake : blackjack ? state.minBet : 1) && !p.left).length < (state.game?.minPlayers || 2) ? "disabled" : ""}>${playing ? "牌局进行中" : host ? (state.hand ? "再来一手" : "开始发牌") : "等待房主发牌"} <span>♠</span></button><div class="room-controls">${host ? `<button data-command="bots" ${playing || !online || state.players.length >= maxPlayers ? "disabled" : ""}>＋ 练习伙伴</button>` : ""}<button data-command="rebuy" ${playing || !online || me.stack >= state.buyIn ? "disabled" : ""}>补充筹码</button><button data-command="invite">邀请朋友 ↗</button></div>`;
   }
   const renderers = {
     poker: renderPoker,
+    doudizhu: () =>
+      renderDoudizhu(state, { $, card, avatar, esc, fmt, online }),
     blackjack: () =>
       renderBlackjack(state, { $, card, avatar, esc, fmt, online }),
   };
@@ -371,6 +388,7 @@ async function showInvite() {
 document.addEventListener("click", async (event) => {
   const button = event.target.closest("button");
   if (!button || button.disabled) return;
+  if (button.dataset.ddzCard) return toggleCard(button);
   if (button.hasAttribute("data-close"))
     return button.closest("dialog").close();
   if (button.dataset.avatar !== undefined) {
@@ -387,7 +405,12 @@ document.addEventListener("click", async (event) => {
     try {
       await request("action", {
         type: button.dataset.action,
-        amount: Number($("#bet-amount")?.value ?? $("#raise-amount")?.value),
+        amount: Number(
+          button.dataset.bid ??
+            $("#bet-amount")?.value ??
+            $("#raise-amount")?.value,
+        ),
+        cards: state.gameType === "doudizhu" ? selectedCards() : undefined,
         hand: state.hand,
         version: state.version,
       });
@@ -456,15 +479,18 @@ $("#history-tab").onclick = () => {
 };
 $("#rules-button").onclick = () =>
   $(
-    state?.gameType === "blackjack"
-      ? "#blackjack-rules-dialog"
-      : "#rules-dialog",
+    state?.gameType === "doudizhu"
+      ? "#doudizhu-rules-dialog"
+      : state?.gameType === "blackjack"
+        ? "#blackjack-rules-dialog"
+        : "#rules-dialog",
   ).showModal();
 $("#game-select").onchange = () => {
   const blackjack = $("#game-select").value === "blackjack";
-  $("#blind-fields").hidden = blackjack;
+  const doudizhu = $("#game-select").value === "doudizhu";
+  $("#blind-fields").hidden = blackjack || doudizhu;
   $("#room-form .form-note").textContent =
-    `${blackjack ? "1–5 人 · 最低下注 10" : "2–8 人"} · 无需注册 · 虚拟筹码`;
+    `${doudizhu ? "3 人 · 底分 10" : blackjack ? "1–5 人 · 最低下注 10" : "2–8 人"} · 无需注册 · 虚拟筹码`;
 };
 $("#invite-button").onclick = showInvite;
 $("#copy-invite").onclick = async () => {
@@ -488,9 +514,11 @@ $("#sound-button").onclick = () => {
 $("#leave-button").onclick = async () => {
   if (
     !confirm(
-      state?.gameType === "blackjack"
-        ? "确定离开牌桌？已下注的手牌会自动停牌并结算。"
-        : "确定离开牌桌？进行中的手牌将弃牌，已全下的牌仍会参与结算。",
+      state?.gameType === "doudizhu"
+        ? "确定离开牌桌？本手座位保留，自动不叫、不出或出最小单张，并正常结算。"
+        : state?.gameType === "blackjack"
+          ? "确定离开牌桌？已下注的手牌会自动停牌并结算。"
+          : "确定离开牌桌？进行中的手牌将弃牌，已全下的牌仍会参与结算。",
     )
   )
     return;

@@ -1,5 +1,6 @@
 import { PokerTable } from "./poker.js";
 import { BlackjackTable } from "./blackjack.js";
+import { DoudizhuTable } from "./doudizhu.js";
 
 // Register future games here; the room service only uses the engine contract.
 export const games = new Map([
@@ -23,6 +24,17 @@ export const games = new Map([
       maxPlayers: 5,
       bots: true,
       practiceBots: 4,
+    },
+  ],
+  [
+    "doudizhu",
+    {
+      Engine: DoudizhuTable,
+      name: "斗地主",
+      minPlayers: 3,
+      maxPlayers: 3,
+      bots: true,
+      practiceBots: 2,
     },
   ],
 ]);

@@ -208,7 +208,7 @@ test("21点 Socket.IO：注册表、机器人自动下注、完整结算、补�
     const metadata = await (await fetch(`${url}/api/games`)).json();
     assert.deepEqual(
       metadata.map((g) => g.gameType),
-      ["poker", "blackjack"],
+      ["poker", "blackjack", "doudizhu"],
     );
     const module = await fetch(`${url}/games/blackjack.js`);
     assert.equal(module.status, 200);
@@ -249,6 +249,124 @@ test("21点服务器计时器：下注超时最低注，行动超时停牌", asy
     assert.equal(s.state.players[0].hands[0].bet, 10);
     assert.equal(s.state.players[0].hands[0].cards.length, 2);
     assert.equal(s.state.result[0].outcome, "push");
+  } finally {
+    s.disconnect();
+    await new Promise((r) => casino.io.close(r));
+  }
+});
+
+test("斗地主 Socket.IO：三席门槛、机器人、隐藏手牌、非法请求、超时整手结算及补码", async () => {
+  const casino = createCasino({
+    botDelay: 0,
+    tickInterval: 2,
+    actionTimeout: 150,
+  });
+  await new Promise((r) => casino.server.listen(0, "127.0.0.1", r));
+  const url = `http://127.0.0.1:${casino.server.address().port}`;
+  const s = io(url, { transports: ["websocket"] });
+  s.on("state", (state) => {
+    s.state = state;
+  });
+  const send = (event, data = {}) => s.timeout(3000).emitWithAck(event, data);
+  const waitFor = async (fn) => {
+    for (let i = 0; i < 2000; i++) {
+      if (fn()) return;
+      await new Promise((r) => setTimeout(r, 5));
+    }
+    assert.fail("等待斗地主同步超时");
+  };
+  try {
+    await new Promise((r) => s.once("connect", r));
+    const created = await send("create", {
+      name: "斗地主玩家",
+      gameType: "doudizhu",
+      stack: 5000,
+    });
+    assert.ok(created.ok);
+    assert.equal(s.state.game.name, "斗地主");
+    assert.equal((await send("start")).ok, false);
+    assert.ok((await send("bots")).ok);
+    assert.equal(s.state.players.length, 3);
+    assert.equal(s.state.players.filter((p) => p.bot).length, 2);
+    const t = casino.rooms.get(created.code).table;
+    t.nextFirstBidder = 0;
+    assert.ok((await send("start")).ok);
+    assert.deepEqual(s.state.bottom, [null, null, null]);
+    assert.ok(
+      s.state.players
+        .slice(1)
+        .every(
+          (p) => p.cards.length === 17 && p.cards.every((c) => c === null),
+        ),
+    );
+    assert.equal(
+      (await send("action", { type: "bid", amount: 3, hand: 0, version: 0 }))
+        .ok,
+      false,
+    );
+    assert.equal(
+      (
+        await send("action", {
+          type: "play",
+          cards: [t.players[1].cards[0].id],
+          hand: s.state.hand,
+          version: s.state.version,
+        })
+      ).ok,
+      false,
+    );
+    assert.ok(
+      (
+        await send("action", {
+          type: "bid",
+          amount: 3,
+          hand: s.state.hand,
+          version: s.state.version,
+        })
+      ).ok,
+    );
+    assert.equal(s.state.landlord, 0);
+    assert.equal(s.state.players[0].cards.length, 20);
+    assert.ok(s.state.bottom.every(Boolean));
+    const stackBefore = s.state.players.map((p) => p.stack);
+    assert.equal((await send("rebuy")).ok, false);
+    // The human uses the same server timer as other games; bots act on botDelay.
+    await waitFor(() => s.state?.stage === "showdown");
+    assert.equal(s.state.result.length, 3);
+    assert.equal(
+      s.state.result.reduce((sum, r) => sum + r.net, 0),
+      0,
+    );
+    assert.equal(
+      s.state.players.reduce((sum, p) => sum + p.stack, 0),
+      15000,
+    );
+    assert.ok(
+      s.state.players.every(
+        (p) =>
+          p.stack >= 0 && Number.isInteger(p.stack) && p.cards.every(Boolean),
+      ),
+    );
+    for (const [i, p] of s.state.players.entries())
+      assert.equal(p.stack - stackBefore[i], s.state.result[i].net);
+    // Force a low balance only after settlement to exercise the shared rebuy gate.
+    t.players[0].stack = 9;
+    assert.equal((await send("next")).ok, false);
+    assert.ok((await send("rebuy")).ok);
+    assert.equal(s.state.players[0].stack, 5000);
+    const module = await fetch(`${url}/games/doudizhu.js`);
+    assert.equal(module.status, 200);
+    assert.match(
+      module.headers.get("content-security-policy"),
+      /script-src 'self'/,
+    );
+    assert.match(await module.text(), /renderDoudizhu/);
+    assert.ok(
+      (await (await fetch(`${url}/api/games`)).json()).some(
+        (g) =>
+          g.gameType === "doudizhu" && g.minPlayers === 3 && g.maxPlayers === 3,
+      ),
+    );
   } finally {
     s.disconnect();
     await new Promise((r) => casino.io.close(r));

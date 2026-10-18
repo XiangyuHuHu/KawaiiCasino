@@ -1891,3 +1891,159 @@ dialog .muted {
     animation: none !important;
   }
 }
+
+.doudizhu .table-wordmark {
+  display: none;
+}
+.table-scene.doudizhu {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+  height: auto;
+  max-height: none;
+  padding: 20px 14px 36px;
+}
+.doudizhu .board-area {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  width: 100%;
+}
+.doudizhu #seats {
+  position: relative;
+  inset: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  overflow: visible;
+  align-content: start;
+}
+.ddz-seat.me {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+.ddz-bottom,
+.ddz-cards {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+.ddz-bottom {
+  justify-content: center;
+  margin: 6px 0;
+  font-size: 10px;
+}
+.ddz-cards .card,
+.ddz-bottom .card {
+  width: 31px;
+  height: 44px;
+  padding: 3px;
+  flex-shrink: 0;
+}
+.ddz-cards .rank,
+.ddz-bottom .rank {
+  font-size: 13px;
+  white-space: nowrap;
+}
+.ddz-cards .card[aria-label*="王"] .rank,
+.ddz-bottom .card[aria-label*="王"] .rank {
+  font-size: 9px;
+}
+.ddz-cards .suit,
+.ddz-bottom .suit {
+  font-size: 10px;
+}
+.ddz-cards .center-suit,
+.ddz-cards .card-corner,
+.ddz-bottom .center-suit,
+.ddz-bottom .card-corner {
+  display: none;
+}
+.ddz-last {
+  font-size: 11px;
+  min-height: 62px;
+}
+.ddz-last .ddz-cards {
+  justify-content: center;
+  margin-top: 5px;
+  gap: 1px;
+}
+.ddz-last .card + .card {
+  margin-left: -7px;
+}
+.ddz-hand {
+  margin-top: 6px;
+  padding-top: 7px;
+  gap: 3px;
+}
+.ddz-card {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  border-radius: 4px;
+  min-height: 0;
+}
+.ddz-card .card {
+  transition: transform 0.1s;
+}
+.ddz-card.selected .card {
+  transform: translateY(-6px);
+  box-shadow: 0 0 0 2px var(--mint);
+}
+.ddz-card:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.ddz-count {
+  color: var(--muted);
+  font-size: 12px;
+}
+.doudizhu .result-banner {
+  font-size: 11px;
+  margin-top: 5px;
+  padding: 5px;
+}
+@media (max-width: 520px) {
+  .doudizhu .board-status {
+    font-size: 10px;
+    margin-bottom: 5px;
+  }
+  .ddz-seat {
+    padding: 6px;
+  }
+  .ddz-seat .seat-name {
+    font-size: 10px;
+    overflow-wrap: anywhere;
+  }
+  .ddz-seat .seat-stack {
+    font-size: 9px;
+  }
+  .ddz-seat .bj-player {
+    gap: 4px;
+  }
+  .ddz-seat .avatar {
+    width: 24px;
+    height: 24px;
+  }
+  .ddz-seat .avatar svg {
+    width: 22px;
+    height: 22px;
+  }
+  .ddz-hand {
+    gap: 2px;
+  }
+  .ddz-hand .card {
+    width: 26px;
+    height: 37px;
+  }
+  .ddz-last .card {
+    width: 26px;
+    height: 37px;
+  }
+  .ddz-last {
+    min-height: 54px;
+  }
+}
