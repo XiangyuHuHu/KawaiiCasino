@@ -350,3 +350,102 @@ test("麻将：手机选择游戏、定缺、点选出牌、三位机器人完�
     await new Promise((r) => casino.io.close(r));
   }
 });
+
+test("掼蛋：手机选游戏、三位伙伴、点选出牌、完整结算、级牌与刷新恢复", async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  const casino = createCasino({ botDelay: 20, tickInterval: 10 });
+  await new Promise((r) => casino.server.listen(0, "127.0.0.1", r));
+  await page.setViewportSize({ width: 390, height: 844 });
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  try {
+    await page.goto(`http://127.0.0.1:${casino.server.address().port}/`);
+    await page.locator('[data-command="create"]').first().click();
+    await page.getByLabel("你的昵称").fill("掼蛋玩家");
+    await page.getByLabel("选择游戏").selectOption("guandan");
+    await expect(page.locator("#blind-fields")).not.toBeVisible();
+    await page.locator("#room-submit").click();
+    await expect(page.locator("#room-label")).toContainText("掼蛋");
+    await expect(page.getByRole("button", { name: "开始发牌" })).toBeDisabled();
+    await page.getByRole("button", { name: "练习伙伴" }).click();
+    await expect(page.locator("#players-value")).toHaveText("4 / 4");
+    await page.getByRole("button", { name: "开始发牌" }).click();
+    await expect(page.locator(".gd-seat.me .gd-card")).toHaveCount(27);
+    await expect(page.locator(".gd-seat:not(.me) .card.back")).toHaveCount(3);
+    await expect(page.locator(".board-status")).toContainText("本手打 2");
+    await expect(page.locator(".gd-levels")).toContainText("1 队");
+    expect(
+      await page.locator(".gd-card").evaluateAll((buttons) => {
+        const scene = document
+          .querySelector("#table-scene")
+          .getBoundingClientRect();
+        return buttons.every((button) => {
+          const r = button.getBoundingClientRect();
+          return (
+            r.left >= scene.left &&
+            r.right <= scene.right &&
+            r.top >= scene.top &&
+            r.bottom <= scene.bottom
+          );
+        });
+      }),
+    ).toBe(true);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    const first = page.locator(".gd-card").first();
+    await first.click();
+    await expect(first).toHaveAttribute("aria-pressed", "true");
+    await page.locator('[data-action="play"]').click();
+    await expect(page.locator(".gd-seat.me .gd-card")).toHaveCount(26);
+    for (let step = 0; step < 150; step++) {
+      await expect
+        .poll(
+          async () =>
+            (await page.locator('[data-action="assist"]').count()) > 0 ||
+            (await page.locator("#stage-label").textContent()) === "本手结束",
+          { timeout: 15000 },
+        )
+        .toBe(true);
+      if ((await page.locator("#stage-label").textContent()) === "本手结束")
+        break;
+      const version = await page
+        .locator("#table-scene")
+        .getAttribute("data-version");
+      await page.locator('[data-action="assist"]').click();
+      await expect(page.locator("#table-scene")).not.toHaveAttribute(
+        "data-version",
+        version,
+      );
+    }
+    await expect(page.locator("#stage-label")).toHaveText("本手结束");
+    await expect(page.locator(".result-banner")).toContainText("队获胜");
+    await expect(page.locator(".result-banner")).toContainText("每份");
+    await expect(page.locator(".gd-order")).toContainText("4.");
+    await expect(page.locator(".gd-seat:not(.me) .card.back")).toHaveCount(0);
+    const t = casino.rooms.values().next().value.table;
+    expect(t.result.reduce((n, r) => n + r.net, 0)).toBe(0);
+    expect(t.players.reduce((n, p) => n + p.stack, 0)).toBe(40000);
+    expect(t.players.every((p) => p.stack >= 0)).toBe(true);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: "test-results/guandan-mobile.png",
+      fullPage: true,
+    });
+    await page.reload();
+    await expect(page.locator(".result-banner")).toContainText("队获胜");
+    await page.getByRole("button", { name: "游戏规则" }).click();
+    await expect(page.locator("#guandan-rules-dialog")).toBeVisible();
+    expect(errors).toEqual([]);
+  } finally {
+    await new Promise((r) => casino.io.close(r));
+  }
+});

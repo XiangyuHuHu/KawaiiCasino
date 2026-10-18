@@ -9,6 +9,7 @@ import { games, gameMetadata } from "./games/index.js";
 
 const root = new URL("../public/", import.meta.url);
 const files = {
+  "/games/guandan.js": ["games/guandan.js", "text/javascript; charset=utf-8"],
   "/": ["index.html", "text/html; charset=utf-8"],
   "/app.js": ["app.js", "text/javascript; charset=utf-8"],
   "/games/mahjong.js": ["games/mahjong.js", "text/javascript; charset=utf-8"],

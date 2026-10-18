@@ -208,7 +208,7 @@ test("21点 Socket.IO：注册表、机器人自动下注、完整结算、补�
     const metadata = await (await fetch(`${url}/api/games`)).json();
     assert.deepEqual(
       metadata.map((g) => g.gameType),
-      ["poker", "blackjack", "doudizhu", "mahjong"],
+      ["poker", "blackjack", "doudizhu", "mahjong", "guandan"],
     );
     const module = await fetch(`${url}/games/blackjack.js`);
     assert.equal(module.status, 200);
@@ -472,6 +472,120 @@ test("麻将 Socket.IO：四席、隐私、动作验证、机器人与真人超�
       (await (await fetch(`${url}/api/games`)).json()).some(
         (g) =>
           g.gameType === "mahjong" && g.minPlayers === 4 && g.maxPlayers === 4,
+      ),
+    );
+  } finally {
+    s.disconnect();
+    await new Promise((r) => casino.io.close(r));
+  }
+});
+
+test("掼蛋 Socket.IO：四席、三位伙伴、手牌隐私、动作校验、真人超时整手结算及升级补码", async () => {
+  const casino = createCasino({
+    botDelay: 0,
+    tickInterval: 2,
+    actionTimeout: 100,
+  });
+  await new Promise((r) => casino.server.listen(0, "127.0.0.1", r));
+  const url = `http://127.0.0.1:${casino.server.address().port}`;
+  const s = io(url, { transports: ["websocket"] });
+  s.on("state", (v) => {
+    s.state = v;
+  });
+  const send = (event, data = {}) => s.timeout(3000).emitWithAck(event, data);
+  try {
+    await new Promise((r) => s.once("connect", r));
+    const room = await send("create", {
+      name: "掼蛋玩家",
+      gameType: "guandan",
+      stack: 5000,
+    });
+    assert.ok(room.ok);
+    assert.equal(s.state.game.name, "掼蛋");
+    assert.equal((await send("start")).ok, false);
+    assert.ok((await send("bots")).ok);
+    assert.equal(s.state.players.length, 4);
+    assert.equal(s.state.players.filter((p) => p.bot).length, 3);
+    assert.ok((await send("start")).ok);
+    assert.equal(s.state.level, 2);
+    assert.deepEqual(s.state.teamLevels, [2, 2]);
+    assert.ok(s.state.players[0].cards.every(Boolean));
+    assert.ok(
+      s.state.players
+        .slice(1)
+        .every(
+          (p) => p.cards.length === 27 && p.cards.every((c) => c === null),
+        ),
+    );
+    const action = (input) =>
+      send("action", {
+        ...input,
+        hand: s.state.hand,
+        version: s.state.version,
+      });
+    assert.equal(
+      (await send("action", { type: "assist", hand: 0, version: 0 })).ok,
+      false,
+    );
+    assert.equal((await action({ type: "pass" })).ok, false);
+    assert.equal((await action({ type: "play", cards: ["forged"] })).ok, false);
+    assert.ok(
+      (await action({ type: "play", cards: [s.state.players[0].cards[0].id] }))
+        .ok,
+    );
+    assert.equal((await send("rebuy")).ok, false);
+    const deadline = Date.now() + 15000;
+    while (s.state.stage !== "showdown" && Date.now() < deadline)
+      await new Promise((r) => setTimeout(r, 10));
+    assert.equal(s.state.stage, "showdown");
+    assert.equal(s.state.result.length, 4);
+    assert.equal(s.state.finishOrder.length, 4);
+    assert.equal(s.state.result.filter((r) => r.won).length, 2);
+    assert.equal(
+      s.state.result.reduce((n, r) => n + r.net, 0),
+      0,
+    );
+    assert.equal(
+      s.state.players.reduce((n, p) => n + p.stack, 0),
+      20000,
+    );
+    assert.ok(
+      s.state.players.every(
+        (p) =>
+          Number.isSafeInteger(p.stack) &&
+          p.stack >= 0 &&
+          p.cards.every(Boolean),
+      ),
+    );
+    for (const r of s.state.result)
+      assert.equal(
+        s.state.players.find((p) => p.id === r.id).stack,
+        5000 + r.net,
+      );
+    const winner = s.state.winningTeam,
+      level = s.state.teamLevels[winner];
+    const t = casino.rooms.get(room.code).table;
+    t.players[0].stack = 9;
+    assert.equal((await send("next")).ok, false);
+    assert.ok((await send("rebuy")).ok);
+    assert.equal(s.state.players[0].stack, 5000);
+    assert.ok((await send("next")).ok);
+    assert.equal(s.state.hand, 2);
+    assert.equal(s.state.level, level);
+    const module = await fetch(`${url}/games/guandan.js`);
+    assert.equal(module.status, 200);
+    assert.match(
+      module.headers.get("content-security-policy"),
+      /script-src 'self'/,
+    );
+    assert.match(await module.text(), /renderGuandan/);
+    assert.ok(
+      (await (await fetch(`${url}/api/games`)).json()).some(
+        (g) =>
+          g.gameType === "guandan" &&
+          g.minPlayers === 4 &&
+          g.maxPlayers === 4 &&
+          g.practiceBots === 3,
       ),
     );
   } finally {

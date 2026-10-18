@@ -1,3 +1,4 @@
+import { GuandanTable } from "./guandan.js";
 import { MahjongTable } from "./mahjong.js";
 import { PokerTable } from "./poker.js";
 import { BlackjackTable } from "./blackjack.js";
@@ -43,6 +44,17 @@ export const games = new Map([
     {
       Engine: MahjongTable,
       name: "麻将",
+      minPlayers: 4,
+      maxPlayers: 4,
+      bots: true,
+      practiceBots: 3,
+    },
+  ],
+  [
+    "guandan",
+    {
+      Engine: GuandanTable,
+      name: "掼蛋",
       minPlayers: 4,
       maxPlayers: 4,
       bots: true,

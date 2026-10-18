@@ -1,4 +1,9 @@
 /* global io */
+import {
+  renderGuandan,
+  selectedGuandanCards,
+  toggleGuandanCard,
+} from "./games/guandan.js";
 import { renderMahjong, selectedTile, toggleTile } from "./games/mahjong.js";
 import { renderBlackjack } from "./games/blackjack.js";
 import { renderDoudizhu, selectedCards, toggleCard } from "./games/doudizhu.js";
@@ -140,9 +145,11 @@ function render() {
   const blackjack = state?.gameType === "blackjack";
   const doudizhu = state?.gameType === "doudizhu";
   const mahjong = state?.gameType === "mahjong";
+  const guandan = state?.gameType === "guandan";
   const maxPlayers = state?.game?.maxPlayers || 8;
-  $("#table-scene").classList.toggle("doudizhu", doudizhu);
+  $("#table-scene").classList.toggle("doudizhu", doudizhu || guandan);
   $("#table-scene").classList.toggle("mahjong", mahjong);
+  $("#table-scene").classList.toggle("guandan", guandan);
   $("#table-scene").classList.toggle("blackjack", blackjack);
   $("#game-name").textContent = state?.game?.name || "游戏大厅";
   $(".game").setAttribute("aria-label", `${state?.game?.name || "游戏"}牌桌`);
@@ -160,15 +167,15 @@ function render() {
   $("#pot-value").textContent = fmt(state?.pot || 0);
   $("#pot-caption").textContent = mahjong
     ? "SCORE · 胡牌每份（加底前）"
-    : doudizhu
+    : doudizhu || guandan
       ? "SCORE · 当前每份分值"
       : blackjack
         ? "TOTAL BETS · 本手总下注"
         : "TOTAL POT · 总底池";
   $("#blind-caption").textContent =
-    doudizhu || mahjong ? "底分" : blackjack ? "最低下注" : "盲注";
+    doudizhu || mahjong || guandan ? "底分" : blackjack ? "最低下注" : "盲注";
   $("#blind-value").textContent =
-    doudizhu || mahjong
+    doudizhu || mahjong || guandan
       ? fmt(state.baseStake)
       : blackjack
         ? fmt(state.minBet)
@@ -185,9 +192,10 @@ function render() {
       '<span class="panel-decoration">✧</span><span class="eyebrow">WELCOME TO THE CLUB</span><h2>今晚，来一手。</h2><p>把好运留在牌桌，<br>把快乐分享给朋友。</p><button class="primary wide" data-command="create">创建房间 <span>＋</span></button><button class="secondary wide" data-command="join">加入朋友的牌桌 <span>↗</span></button>';
   } else {
     $("#room-panel").innerHTML =
-      `<span class="panel-decoration">✧</span><span class="eyebrow">MAKE YOURSELF AT HOME</span><div class="room-code-display"><small>房间号 · ${host ? "你是房主" : "朋友的牌桌"}</small>${state.code}</div><p>${playing ? "牌局进行中，好运正在路上。" : "朋友到齐，随时可以开始。"}</p><button class="primary wide" data-command="deal" ${!host || playing || !online || state.players.filter((p) => p.connected && p.stack >= (doudizhu || mahjong ? state.baseStake : blackjack ? state.minBet : 1) && !p.left).length < (state.game?.minPlayers || 2) ? "disabled" : ""}>${playing ? "牌局进行中" : host ? (state.hand ? "再来一手" : "开始发牌") : "等待房主发牌"} <span>♠</span></button><div class="room-controls">${host ? `<button data-command="bots" ${playing || !online || state.players.length >= maxPlayers ? "disabled" : ""}>＋ 练习伙伴</button>` : ""}<button data-command="rebuy" ${playing || !online || me.stack >= state.buyIn ? "disabled" : ""}>补充筹码</button><button data-command="invite">邀请朋友 ↗</button></div>`;
+      `<span class="panel-decoration">✧</span><span class="eyebrow">MAKE YOURSELF AT HOME</span><div class="room-code-display"><small>房间号 · ${host ? "你是房主" : "朋友的牌桌"}</small>${state.code}</div><p>${playing ? "牌局进行中，好运正在路上。" : "朋友到齐，随时可以开始。"}</p><button class="primary wide" data-command="deal" ${!host || playing || !online || state.players.filter((p) => p.connected && p.stack >= (doudizhu || mahjong || guandan ? state.baseStake : blackjack ? state.minBet : 1) && !p.left).length < (state.game?.minPlayers || 2) ? "disabled" : ""}>${playing ? "牌局进行中" : host ? (state.hand ? "再来一手" : "开始发牌") : "等待房主发牌"} <span>♠</span></button><div class="room-controls">${host ? `<button data-command="bots" ${playing || !online || state.players.length >= maxPlayers ? "disabled" : ""}>＋ 练习伙伴</button>` : ""}<button data-command="rebuy" ${playing || !online || me.stack >= state.buyIn ? "disabled" : ""}>补充筹码</button><button data-command="invite">邀请朋友 ↗</button></div>`;
   }
   const renderers = {
+    guandan: () => renderGuandan(state, { $, card, avatar, esc, fmt, online }),
     poker: renderPoker,
     mahjong: () => renderMahjong(state, { $, avatar, esc, fmt, online }),
     doudizhu: () =>
@@ -395,6 +403,7 @@ document.addEventListener("click", async (event) => {
   const button = event.target.closest("button");
   if (!button || button.disabled) return;
   if (button.dataset.mjTile) return toggleTile(button);
+  if (button.dataset.gdCard) return toggleGuandanCard(button);
   if (button.dataset.ddzCard) return toggleCard(button);
   if (button.hasAttribute("data-close"))
     return button.closest("dialog").close();
@@ -419,7 +428,12 @@ document.addEventListener("click", async (event) => {
         ),
         tile: state.gameType === "mahjong" ? selectedTile() : undefined,
         suit: button.dataset.suit,
-        cards: state.gameType === "doudizhu" ? selectedCards() : undefined,
+        cards:
+          state.gameType === "guandan"
+            ? selectedGuandanCards()
+            : state.gameType === "doudizhu"
+              ? selectedCards()
+              : undefined,
         hand: state.hand,
         version: state.version,
       });
@@ -488,21 +502,24 @@ $("#history-tab").onclick = () => {
 };
 $("#rules-button").onclick = () =>
   $(
-    state?.gameType === "mahjong"
-      ? "#mahjong-rules-dialog"
-      : state?.gameType === "doudizhu"
-        ? "#doudizhu-rules-dialog"
-        : state?.gameType === "blackjack"
-          ? "#blackjack-rules-dialog"
-          : "#rules-dialog",
+    state?.gameType === "guandan"
+      ? "#guandan-rules-dialog"
+      : state?.gameType === "mahjong"
+        ? "#mahjong-rules-dialog"
+        : state?.gameType === "doudizhu"
+          ? "#doudizhu-rules-dialog"
+          : state?.gameType === "blackjack"
+            ? "#blackjack-rules-dialog"
+            : "#rules-dialog",
   ).showModal();
 $("#game-select").onchange = () => {
   const blackjack = $("#game-select").value === "blackjack";
   const doudizhu = $("#game-select").value === "doudizhu";
   const mahjong = $("#game-select").value === "mahjong";
-  $("#blind-fields").hidden = blackjack || doudizhu || mahjong;
+  const guandan = $("#game-select").value === "guandan";
+  $("#blind-fields").hidden = blackjack || doudizhu || mahjong || guandan;
   $("#room-form .form-note").textContent =
-    `${mahjong ? "4 人 · 底分 10" : doudizhu ? "3 人 · 底分 10" : blackjack ? "1–5 人 · 最低下注 10" : "2–8 人"} · 无需注册 · 虚拟筹码`;
+    `${guandan ? "4 人组队 · 底分 10" : mahjong ? "4 人 · 底分 10" : doudizhu ? "3 人 · 底分 10" : blackjack ? "1–5 人 · 最低下注 10" : "2–8 人"} · 无需注册 · 虚拟筹码`;
 };
 $("#invite-button").onclick = showInvite;
 $("#copy-invite").onclick = async () => {
@@ -528,11 +545,13 @@ $("#leave-button").onclick = async () => {
     !confirm(
       state?.gameType === "mahjong"
         ? "确定离开牌桌？本手座位保留，自动定缺、过或出最小合法牌，并正常结算。"
-        : state?.gameType === "doudizhu"
-          ? "确定离开牌桌？本手座位保留，自动不叫、不出或出最小单张，并正常结算。"
-          : state?.gameType === "blackjack"
-            ? "确定离开牌桌？已下注的手牌会自动停牌并结算。"
-            : "确定离开牌桌？进行中的手牌将弃牌，已全下的牌仍会参与结算。",
+        : state?.gameType === "guandan"
+          ? "确定离开牌桌？本手座位保留，自动不出或出最小单张，并正常结算。"
+          : state?.gameType === "doudizhu"
+            ? "确定离开牌桌？本手座位保留，自动不叫、不出或出最小单张，并正常结算。"
+            : state?.gameType === "blackjack"
+              ? "确定离开牌桌？已下注的手牌会自动停牌并结算。"
+              : "确定离开牌桌？进行中的手牌将弃牌，已全下的牌仍会参与结算。",
     )
   )
     return;

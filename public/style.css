@@ -2214,3 +2214,30 @@ dialog .muted {
     font-size: 10px;
   }
 }
+
+.guandan #seats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.gd-seat {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.gd-seat .bj-player > div {
+  min-width: 0;
+}
+.gd-levels,
+.gd-order {
+  color: var(--muted);
+  font-size: 11px;
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.gd-wild .card {
+  box-shadow: 0 0 0 1px var(--gold);
+}
+@media (max-width: 520px) {
+  .gd-seat:not(.me) .bj-player {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
