@@ -20,9 +20,15 @@ test("两位真实玩家入座、聊天、防注入、完成对局并刷新恢�
   await b.goto(`/?room=${code}`);
   await b.getByLabel("你的昵称").fill("小猫咪");
   await b.locator("#room-submit").click();
+  await expect(b.locator("#room-dialog")).not.toBeVisible();
+  await expect(b.locator("#players-value")).toHaveText("2 / 8");
   await expect(a.locator("#players-value")).toHaveText("2 / 8");
   await b.getByLabel("聊天消息").fill("<img src=x onerror=alert(1)>你好！");
+  await expect(b.getByLabel("聊天消息")).toHaveValue(
+    "<img src=x onerror=alert(1)>你好！",
+  );
   await b.getByRole("button", { name: "发送消息" }).click();
+  await expect(b.getByLabel("聊天消息")).toHaveValue("");
   await expect(a.locator(".message p")).toHaveText(
     "<img src=x onerror=alert(1)>你好！",
   );

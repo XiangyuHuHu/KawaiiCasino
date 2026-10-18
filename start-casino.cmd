@@ -3,7 +3,7 @@ chcp 65001 >nul
 cd /d "%~dp0"
 where node >nul 2>nul
 if errorlevel 1 (
-  echo 请先安装 Node.js 22 或更高版本：https://nodejs.org/
+  echo Please install Node.js 22 or newer: https://nodejs.org/
   pause
   exit /b 1
 )
@@ -15,7 +15,7 @@ if not exist node_modules\socket.io (
   )
 )
 echo.
-echo 正在启动 Kawaii Casino，浏览器打开 http://localhost:3000
-echo 把终端显示的局域网地址发给同一 Wi-Fi 下的朋友。
+echo Starting Kawaii Casino. Open http://localhost:3000 in your browser.
+echo Share a LAN address printed below with friends on the same Wi-Fi.
 node server/index.js
 pause
