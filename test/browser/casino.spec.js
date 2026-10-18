@@ -109,3 +109,46 @@ test("手机牌桌无横向溢出，单人练习可玩", async ({ page }) => {
     fullPage: true,
   });
 });
+
+test("21点：手机建房选游戏、单人下注停牌、结算和刷新恢复", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("/");
+  await page.locator('[data-command="create"]').first().click();
+  await page.getByLabel("你的昵称").fill("21点玩家");
+  await page.getByLabel("选择游戏").selectOption("blackjack");
+  await expect(page.locator("#blind-fields")).not.toBeVisible();
+  await page.locator("#room-submit").click();
+  await expect(page.locator("#room-label")).toContainText("21点");
+  await expect(page.locator("#players-value")).toHaveText("1 / 5");
+  await page.getByRole("button", { name: "开始发牌" }).click();
+  await page.getByLabel("21点下注金额").fill("11");
+  await page.locator('[data-action="bet"]').click();
+  // A natural hand settles without a player turn.
+  await expect
+    .poll(
+      async () =>
+        (await page.locator('[data-action="stand"]').count()) > 0 ||
+        (await page.locator("#stage-label").textContent()) === "本手结束",
+    )
+    .toBe(true);
+  if (await page.locator('[data-action="stand"]').count()) {
+    await expect(page.locator("#board-area .card.back")).toHaveCount(1);
+    await page.locator('[data-action="stand"]').click();
+  }
+  await expect(page.locator("#stage-label")).toHaveText("本手结束");
+  await expect(page.locator(".bj-outcome")).toContainText("净");
+  await expect(page.locator("#board-area .card.back")).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator("#room-label")).toContainText("21点");
+  await expect(page.locator(".bj-outcome")).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+    )
+    .toBe(true);
+  await page.getByRole("button", { name: "游戏规则" }).click();
+  await expect(page.locator("#blackjack-rules-dialog")).toBeVisible();
+  expect(errors).toEqual([]);
+});

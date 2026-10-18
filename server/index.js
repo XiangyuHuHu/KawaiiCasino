@@ -5,22 +5,34 @@ import { resolve } from "node:path";
 import { networkInterfaces } from "node:os";
 import { randomBytes, randomInt } from "node:crypto";
 import { Server } from "socket.io";
-import { Table } from "./poker.js";
+import { games, gameMetadata } from "./games/index.js";
 
 const root = new URL("../public/", import.meta.url);
 const files = {
   "/": ["index.html", "text/html; charset=utf-8"],
   "/app.js": ["app.js", "text/javascript; charset=utf-8"],
+  "/games/blackjack.js": [
+    "games/blackjack.js",
+    "text/javascript; charset=utf-8",
+  ],
   "/style.css": ["style.css", "text/css; charset=utf-8"],
   "/favicon.svg": ["favicon.svg", "image/svg+xml"],
 };
-export function createCasino() {
+export function createCasino({
+  botDelay = 1000,
+  tickInterval = 300,
+  actionTimeout = 35000,
+} = {}) {
   const rooms = new Map();
   const server = http.createServer(async (req, res) => {
     const pathname = new URL(req.url, "http://localhost").pathname;
     if (pathname === "/api/health") {
       res.writeHead(200, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({ ok: true, rooms: rooms.size }));
+    }
+    if (pathname === "/api/games") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify([...games.keys()].map(gameMetadata)));
     }
     if (pathname === "/api/addresses") {
       const port = server.address()?.port;
@@ -66,6 +78,8 @@ export function createCasino() {
           code: room.code,
           hostId: room.hostId,
           me: p.id,
+          gameType: room.gameType,
+          game: gameMetadata(room.gameType),
           ...room.table.view(p.id),
           messages: room.messages,
         });
@@ -127,6 +141,9 @@ export function createCasino() {
       if (socket.data.code) throw new Error("请先离开当前房间");
       if (rooms.size >= 1000) throw new Error("服务器房间已满");
       const name = cleanName(input.name);
+      const gameType = input.gameType ?? "poker";
+      gameMetadata(gameType);
+      const { Engine } = games.get(gameType);
       const smallBlind = [25, 50, 100].includes(input.smallBlind)
         ? input.smallBlind
         : 50;
@@ -139,7 +156,8 @@ export function createCasino() {
       } while (rooms.has(code));
       const room = {
         code,
-        table: new Table({ smallBlind, stack }),
+        gameType,
+        table: new Engine({ smallBlind, stack, actionTimeout }),
         messages: [],
         updated: Date.now(),
         hostId: null,
@@ -179,12 +197,15 @@ export function createCasino() {
       }
       return enter(room, p);
     });
-    event("deal", () => {
+    const startRound = () => {
       const { room } = host();
       room.table.prune();
       room.table.start();
       emit(room);
-    });
+    };
+    event("deal", startRound);
+    event("start", startRound);
+    event("next", startRound);
     event("action", (input) => {
       const { room, player } = current();
       if (
@@ -192,18 +213,25 @@ export function createCasino() {
         input.hand !== room.table.hand
       )
         throw new Error("牌局已更新，请重新操作");
-      room.table.act(player.id, input.type, input.amount);
+      room.table.action(player.id, input);
       emit(room);
     });
     event("bots", () => {
       const { room } = host();
       if (room.table.playing) throw new Error("请等本手结束再添加练习伙伴");
       room.table.prune();
-      const names = ["薄荷团子", "桃桃汽水", "午夜布丁"];
+      const game = games.get(room.gameType);
+      if (!game.bots) throw new Error("此游戏暂不支持练习伙伴");
+      const baseNames = ["薄荷团子", "桃桃汽水", "午夜布丁", "星星奶糖"];
+      const names = Array.from(
+        { length: game.practiceBots ?? game.maxPlayers - 1 },
+        (_, i) =>
+          baseNames[i % baseNames.length] + (i < baseNames.length ? "" : i + 1),
+      );
       let count = 0;
       for (const name of names)
         if (
-          room.table.players.length < 8 &&
+          room.table.players.length < game.maxPlayers &&
           !room.table.players.some((p) => p.bot && p.name === name)
         ) {
           room.table.addPlayer(name, { bot: true, avatar: count++ + 1 });
@@ -271,27 +299,15 @@ export function createCasino() {
       if (!t.playing || !p) continue;
       if (!room.table.players.some((p) => !p.bot && p.connected)) continue;
       if (
-        (p.bot && Date.now() > t.deadline - 34000) ||
-        Date.now() > t.deadline
+        (p.bot &&
+          Date.now() >= t.deadline - (t.actionTimeout ?? 35000) + botDelay) ||
+        Date.now() >= t.deadline
       ) {
-        const legal = t.legal(p.id);
-        if (!legal) continue;
-        // Deliberately simple practice opponents; real game state stays on the server.
-        if (
-          p.bot &&
-          legal.canRaise &&
-          legal.max >= legal.min &&
-          randomInt(10) === 0
-        )
-          t.act(p.id, "raise", legal.min);
-        else if (legal.toCall === 0) t.act(p.id, "check");
-        else if (p.bot && (legal.toCall < t.bigBlind * 5 || randomInt(4) !== 0))
-          t.act(p.id, "call");
-        else t.act(p.id, "fold");
+        t.automaticAction(p.id, p.bot);
         emit(room);
       }
     }
-  }, 300);
+  }, tickInterval);
   ticker.unref();
   server.on("close", () => clearInterval(ticker));
   return {
@@ -317,7 +333,7 @@ if (
   });
   server.listen(port, "0.0.0.0", () => {
     console.log(
-      `\n  ♠ KAWAII CASINO · 德州扑克\n\n  本机：http://localhost:${port}`,
+      `\n  ♠ KAWAII CASINO · 朋友游戏厅\n\n  本机：http://localhost:${port}`,
     );
     for (const n of Object.values(networkInterfaces()).flat())
       if (n.family === "IPv4" && !n.internal)

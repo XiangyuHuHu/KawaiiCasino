@@ -1774,6 +1774,117 @@ dialog .muted {
   left: auto;
   right: 85%;
 }
+.game-select-field {
+  grid-column: 1 / -1;
+}
+.blackjack .board-area {
+  top: 5%;
+  width: 90%;
+}
+.blackjack .table-wordmark {
+  display: none;
+}
+.blackjack #seats {
+  position: absolute;
+  inset: 40% 4% 6%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  overflow-y: auto;
+  align-content: start;
+}
+.bj-seat {
+  min-width: 0;
+  background: #24192fed;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 10px;
+  font-size: 10px;
+}
+.bj-seat.me {
+  border-color: var(--lavender);
+}
+.bj-seat.current {
+  box-shadow: inset 0 0 0 2px var(--mint);
+}
+.bj-player {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.bj-player .avatar {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+.bj-player .avatar svg {
+  width: 28px;
+  height: 28px;
+}
+.bj-player .seat-name {
+  margin: 0 0 4px;
+  max-width: none;
+}
+.bj-player small {
+  color: var(--muted);
+}
+.bj-hands {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+.bj-hand {
+  min-width: 0;
+  width: 100%;
+  padding: 4px 0;
+  line-height: 1.8;
+}
+.bj-hand.active {
+  border-bottom: 1px solid var(--mint);
+}
+.bj-cards {
+  display: flex;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.bj-cards .card {
+  width: 30px;
+  height: 43px;
+  flex-shrink: 0;
+  padding: 3px;
+}
+.bj-cards .card + .card {
+  margin-left: -7px;
+}
+.bj-cards .rank {
+  font-size: 14px;
+}
+.bj-cards .suit {
+  font-size: 10px;
+}
+.bj-cards .center-suit,
+.bj-cards .card-corner {
+  display: none;
+}
+.bj-outcome {
+  color: var(--gold);
+}
+@media (max-width: 520px) {
+  .blackjack #seats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    inset: 33% 4% 6%;
+  }
+  .blackjack .board-status {
+    margin-bottom: 6px;
+  }
+  .blackjack .hand-hint {
+    font-size: 9px;
+  }
+  .bj-seat {
+    padding: 8px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;

@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#17101f" />
     <meta
       name="description"
-      content="Kawaii Casino — 和朋友围坐一桌，享受像素风德州扑克。支持局域网多人联机。"
+      content="Kawaii Casino — 和朋友围坐一桌，享受像素风德州扑克和 21点。支持局域网多人联机。"
     />
     <title>Kawaii Casino · 今晚，来一手</title>
     <link rel="icon" href="/favicon.svg" />
@@ -19,7 +19,7 @@
         ><span>KAWAII<span class="brand-sub">CASINO CLUB</span></span></a
       >
       <nav aria-label="游戏">
-        <span class="nav-active">德州扑克 <i>TEXAS HOLD’EM</i></span
+        <span class="nav-active" id="game-name">游戏大厅</span
         ><span class="coming">更多游戏 <small>SOON</small></span>
       </nav>
       <div class="connection">
@@ -31,7 +31,7 @@
       </div>
     </header>
     <main class="layout">
-      <section class="game" aria-label="德州扑克牌桌">
+      <section class="game" aria-label="游戏牌桌">
         <div class="table-toolbar">
           <div>
             <span class="live-tag">FRIENDS TABLE</span
@@ -86,11 +86,15 @@
           <div class="pot-total">
             <span class="chip-icon">✦</span>
             <div>
-              <small>TOTAL POT · 总底池</small><strong id="pot-value">0</strong>
+              <small id="pot-caption">TOTAL POT · 总底池</small
+              ><strong id="pot-value">0</strong>
             </div>
           </div>
           <div class="table-stats">
-            <div><small>盲注</small><b id="blind-value">50 / 100</b></div>
+            <div>
+              <small id="blind-caption">盲注</small
+              ><b id="blind-value">50 / 100</b>
+            </div>
             <div><small>我的筹码</small><b id="stack-value">—</b></div>
             <div><small>在线玩家</small><b id="players-value">0 / 8</b></div>
           </div>
@@ -164,7 +168,14 @@
           />
         </div>
         <div id="create-fields" class="form-grid">
-          <div>
+          <div class="game-select-field">
+            <label for="game-select">选择游戏</label
+            ><select id="game-select">
+              <option value="poker">德州扑克</option>
+              <option value="blackjack">21点</option>
+            </select>
+          </div>
+          <div id="blind-fields">
             <label for="blind-select">小盲 / 大盲</label
             ><select id="blind-select">
               <option value="25">25 / 50 · 轻松局</option>
@@ -214,6 +225,43 @@
       </p>
       <p class="muted">
         房间保存在启动服务的电脑内存中，重启会清空。游戏只使用虚拟积分。
+      </p>
+      <button class="primary wide" data-close>明白了，入座吧 ♠</button>
+    </dialog>
+    <dialog id="blackjack-rules-dialog">
+      <button class="dialog-close" data-close aria-label="关闭">×</button>
+      <span class="eyebrow">BLACKJACK · 21</span>
+      <h1>21点，刚刚好。</h1>
+      <p>
+        1–5 位玩家对抗自动庄家。六副牌，剩余不足 25% 时在下一手洗牌。A 算 1 或
+        11，J/Q/K 算 10；庄家软 17 停牌。
+      </p>
+      <ol class="rules-list">
+        <li>
+          <b>先下注，再发牌</b
+          ><span
+            >每手最低 10，可下注至全部筹码。普通获胜净赢 1 倍；原手黑杰克净赢
+            1.5 倍（向下取整）；平局退注，爆牌即输。</span
+          >
+        </li>
+        <li>
+          <b>要牌 / 停牌 / 加倍</b
+          ><span
+            >首两张且筹码足够时可加倍，再拿一张后停牌。每次限时 35
+            秒，超时停牌；下注超时下最低注。</span
+          >
+        </li>
+        <li>
+          <b>分牌一次</b
+          ><span
+            >相同牌面（如两张 Q）可再付一份注拆成两手；不能再次分牌。分 A
+            后每手只补一张；分牌后的 21 点按普通获胜结算。允许分牌后加倍（分 A
+            除外）。</span
+          >
+        </li>
+      </ol>
+      <p class="muted">
+        庄家发牌后检查黑杰克。不设保险或投降。离桌时已下注手牌自动停牌；补充筹码在每手结束后进行。每手显示返还与净盈亏，庄家累计净盈亏可为负数。
       </p>
       <button class="primary wide" data-close>明白了，入座吧 ♠</button>
     </dialog>
