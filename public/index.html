@@ -174,6 +174,7 @@
               <option value="poker">德州扑克</option>
               <option value="blackjack">21点</option>
               <option value="doudizhu">斗地主</option>
+              <option value="mahjong">麻将</option>
             </select>
           </div>
           <div id="blind-fields">
@@ -293,6 +294,29 @@
         至少 10 筹码才能开局。点选手牌后按「出牌」，也可「帮我一步」。每步 35
         秒，超时不叫 /
         不出，自由领出时打最小单张。离桌本手保留座位自动行动并结算，结束后移除；补码复用「补充筹码」。
+      </p>
+      <button class="primary wide" data-close>明白了，入座吧 ♠</button>
+    </dialog>
+    <dialog id="mahjong-rules-dialog">
+      <button class="dialog-close" data-close aria-label="关闭">×</button>
+      <span class="eyebrow">MAHJONG · 四人围坐</span>
+      <h1>简化四川麻将</h1>
+      <p>
+        4 人、108 张万条筒，无字无花。庄家 14 张，闲家 13
+        张；首局一号座坐庄，之后赢家坐庄，流局下家坐庄。先定缺，有缺门牌必须先打缺，未清缺不能胡。不吃，可碰、明杠、加杠、暗杠；杠后从牌墙尾补一张。
+      </p>
+      <p>
+        四组顺子/刻子（杠算一组）加一对，或七对可胡。胡优先于碰杠，多人胡按出牌者下家起截胡；第一位胡牌即结束，不血战。平胡
+        1 倍（加番起点 0），对对胡 +1、清一色 +2、七对 +2、每杠 +1、杠上开花
+        +1，累计最多 3 番即 8 倍。底分 10 × 倍数；自摸三家各付再加底分
+        10，点炮仅出牌者付。各家按余额封顶，赢家只收实际付款。
+      </p>
+      <p class="muted">
+        不换三张、不抢杠胡、不一炮多响、不计刮风下雨或根/龙七对；四张可算两对但无额外番。胡牌窗口优先，再处理碰杠窗口，同级按座位顺序；每次最长
+        8
+        秒，超时过。最后一张打出仍可胡，否则流局不支付，不查叫/查花猪。普通行动
+        35 秒，超时定缺选最少花色，出牌选最小合法牌。可用「帮我一步」。至少 10
+        筹码开局，结束后可补码。
       </p>
       <button class="primary wide" data-close>明白了，入座吧 ♠</button>
     </dialog>

@@ -1,3 +1,4 @@
+import { MahjongTable } from "./mahjong.js";
 import { PokerTable } from "./poker.js";
 import { BlackjackTable } from "./blackjack.js";
 import { DoudizhuTable } from "./doudizhu.js";
@@ -35,6 +36,17 @@ export const games = new Map([
       maxPlayers: 3,
       bots: true,
       practiceBots: 2,
+    },
+  ],
+  [
+    "mahjong",
+    {
+      Engine: MahjongTable,
+      name: "麻将",
+      minPlayers: 4,
+      maxPlayers: 4,
+      bots: true,
+      practiceBots: 3,
     },
   ],
 ]);

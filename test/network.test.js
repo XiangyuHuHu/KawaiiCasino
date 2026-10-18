@@ -208,7 +208,7 @@ test("21点 Socket.IO：注册表、机器人自动下注、完整结算、补�
     const metadata = await (await fetch(`${url}/api/games`)).json();
     assert.deepEqual(
       metadata.map((g) => g.gameType),
-      ["poker", "blackjack", "doudizhu"],
+      ["poker", "blackjack", "doudizhu", "mahjong"],
     );
     const module = await fetch(`${url}/games/blackjack.js`);
     assert.equal(module.status, 200);
@@ -365,6 +365,113 @@ test("斗地主 Socket.IO：三席门槛、机器人、隐藏手牌、非法请�
       (await (await fetch(`${url}/api/games`)).json()).some(
         (g) =>
           g.gameType === "doudizhu" && g.minPlayers === 3 && g.maxPlayers === 3,
+      ),
+    );
+  } finally {
+    s.disconnect();
+    await new Promise((r) => casino.io.close(r));
+  }
+});
+
+test("麻将 Socket.IO：四席、隐私、动作验证、机器人与真人超时完成整手、补码与静态模块", async () => {
+  const casino = createCasino({
+    botDelay: 0,
+    tickInterval: 5,
+    actionTimeout: 45,
+  });
+  await new Promise((r) => casino.server.listen(0, "127.0.0.1", r));
+  const url = `http://127.0.0.1:${casino.server.address().port}`;
+  const s = io(url, { transports: ["websocket"] });
+  s.on("state", (v) => (s.state = v));
+  const send = (event, data = {}) => s.timeout(3000).emitWithAck(event, data);
+  try {
+    await new Promise((r) => s.once("connect", r));
+    const room = await send("create", {
+      name: "麻将玩家",
+      gameType: "mahjong",
+      stack: 5000,
+    });
+    assert.ok(room.ok);
+    assert.equal((await send("start")).ok, false);
+    assert.ok((await send("bots")).ok);
+    assert.equal(s.state.players.length, 4);
+    assert.equal(s.state.players.filter((p) => p.bot).length, 3);
+    assert.ok((await send("start")).ok);
+    assert.equal(s.state.stage, "void");
+    assert.equal(s.state.players[0].tiles.length, 14);
+    assert.ok(s.state.players[0].tiles.every(Boolean));
+    assert.ok(
+      s.state.players
+        .slice(1)
+        .every(
+          (p) => p.tiles.length === 13 && p.tiles.every((t) => t === null),
+        ),
+    );
+    assert.equal(
+      (await send("action", { type: "void", suit: "wan", hand: 0, version: 0 }))
+        .ok,
+      false,
+    );
+    assert.equal(
+      (
+        await send("action", {
+          type: "discard",
+          tile: s.state.players[0].tiles[0].id,
+          hand: s.state.hand,
+          version: s.state.version,
+        })
+      ).ok,
+      false,
+    );
+    assert.ok(
+      (
+        await send("action", {
+          type: "void",
+          suit: "tong",
+          hand: s.state.hand,
+          version: s.state.version,
+        })
+      ).ok,
+    );
+    assert.equal((await send("rebuy")).ok, false);
+    // Human uses real safe defaults; bot claims resolve immediately, other actions use botDelay.
+    const deadline = Date.now() + 10000;
+    while (s.state.stage !== "showdown" && Date.now() < deadline)
+      await new Promise((r) => setTimeout(r, 10));
+    assert.equal(s.state.stage, "showdown");
+    assert.equal(s.state.result.length, 4);
+    assert.equal(
+      s.state.result.reduce((n, r) => n + r.net, 0),
+      0,
+    );
+    assert.equal(
+      s.state.players.reduce((n, p) => n + p.stack, 0),
+      20000,
+    );
+    assert.ok(
+      s.state.players.every(
+        (p) =>
+          p.stack >= 0 &&
+          Number.isSafeInteger(p.stack) &&
+          p.tiles.every(Boolean),
+      ),
+    );
+    const t = casino.rooms.get(room.code).table;
+    t.players[0].stack = 9;
+    assert.equal((await send("next")).ok, false);
+    assert.ok((await send("rebuy")).ok);
+    assert.equal(s.state.players[0].stack, 5000);
+    const module = await fetch(`${url}/games/mahjong.js`);
+    assert.equal(module.status, 200);
+    assert.match(
+      module.headers.get("content-security-policy"),
+      /script-src 'self'/,
+    );
+    assert.match(await module.text(), /renderMahjong/);
+    assert.ok(
+      (await (await fetch(`${url}/api/games`)).json()).some(
+        (g) =>
+          g.gameType === "mahjong" && g.minPlayers === 4 && g.maxPlayers === 4,
       ),
     );
   } finally {

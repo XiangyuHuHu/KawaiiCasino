@@ -262,3 +262,91 @@ test("斗地主：手机选游戏、添加两位伙伴、点击选牌并完成�
     await new Promise((resolve) => casino.io.close(resolve));
   }
 });
+
+test("麻将：手机选择游戏、定缺、点选出牌、三位机器人完成结算和刷新恢复", async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  const casino = createCasino({ botDelay: 20, tickInterval: 10 });
+  await new Promise((r) => casino.server.listen(0, "127.0.0.1", r));
+  await page.setViewportSize({ width: 390, height: 844 });
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  try {
+    await page.goto(`http://127.0.0.1:${casino.server.address().port}/`);
+    await page.locator('[data-command="create"]').first().click();
+    await page.getByLabel("你的昵称").fill("麻将玩家");
+    await page.getByLabel("选择游戏").selectOption("mahjong");
+    await expect(page.locator("#blind-fields")).not.toBeVisible();
+    await page.locator("#room-submit").click();
+    await expect(page.locator("#room-label")).toContainText("麻将");
+    await expect(page.getByRole("button", { name: "开始发牌" })).toBeDisabled();
+    await page.getByRole("button", { name: "练习伙伴" }).click();
+    await expect(page.locator("#players-value")).toHaveText("4 / 4");
+    await page.getByRole("button", { name: "开始发牌" }).click();
+    await expect(page.locator(".mj-seat.me .mj-select")).toHaveCount(14);
+    await expect(page.locator(".mj-seat:not(.me) .mj-tile.back")).toHaveCount(
+      3,
+    );
+    const t = casino.rooms.values().next().value.table;
+    const human = t.players[0];
+    const missing = ["wan", "tiao", "tong"].sort(
+      (a, b) =>
+        human.tiles.filter((t) => t.suit === a).length -
+        human.tiles.filter((t) => t.suit === b).length,
+    )[0];
+    await page.locator(`[data-suit="${missing}"]`).click();
+    await expect(page.locator('[data-action="discard"]')).toBeVisible();
+    // Select a legal tile and submit through the real generic action handler.
+    const tileId = t.legal(human.id).discards[0];
+    await page.locator(`[data-mj-tile="${tileId}"]`).click();
+    await expect(page.locator(`[data-mj-tile="${tileId}"]`)).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await page.locator('[data-action="discard"]').click();
+    for (let step = 0; step < 180; step++) {
+      await expect
+        .poll(
+          async () =>
+            (await page.locator('[data-action="assist"]').count()) > 0 ||
+            (await page.locator("#stage-label").textContent()) === "本手结束",
+          { timeout: 15000 },
+        )
+        .toBe(true);
+      if ((await page.locator("#stage-label").textContent()) === "本手结束")
+        break;
+      const version = await page
+        .locator("#table-scene")
+        .getAttribute("data-version");
+      await page.locator('[data-action="assist"]').click();
+      await expect(page.locator("#table-scene")).not.toHaveAttribute(
+        "data-version",
+        version,
+      );
+    }
+    await expect(page.locator("#stage-label")).toHaveText("本手结束");
+    await expect(page.locator(".result-banner")).toContainText(
+      /自摸|点炮胡|流局/,
+    );
+    expect(t.result).toHaveLength(4);
+    expect(t.result.reduce((n, r) => n + r.net, 0)).toBe(0);
+    expect(t.players.reduce((n, p) => n + p.stack, 0)).toBe(40000);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: "test-results/mahjong-mobile.png",
+      fullPage: true,
+    });
+    await page.reload();
+    await expect(page.locator(".result-banner")).toBeVisible();
+    await page.getByRole("button", { name: "游戏规则" }).click();
+    await expect(page.locator("#mahjong-rules-dialog")).toBeVisible();
+    expect(errors).toEqual([]);
+  } finally {
+    await new Promise((r) => casino.io.close(r));
+  }
+});

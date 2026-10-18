@@ -2047,3 +2047,170 @@ dialog .muted {
     min-height: 54px;
   }
 }
+
+.mahjong .table-wordmark {
+  display: none;
+}
+.table-scene.mahjong {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  height: auto;
+  max-height: none;
+  padding: 20px 14px 30px;
+}
+.mahjong .board-area {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  width: 100%;
+}
+.mahjong #seats {
+  position: relative;
+  inset: auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  align-content: start;
+}
+.mj-seat {
+  min-width: 0;
+}
+.mj-seat.me {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+.mj-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  align-items: center;
+}
+.mj-tile {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 42px;
+  border: 2px solid #c5b9d6;
+  border-bottom: 5px solid #9887b4;
+  border-radius: 3px;
+  background: #fff5e5;
+  color: #ad4169;
+  font-size: 12px;
+  line-height: 1.1;
+  box-shadow: 2px 2px 0 #30233e;
+}
+.mj-tile b {
+  font-size: 17px;
+}
+.mj-tile.tiao {
+  color: #277b62;
+}
+.mj-tile.tong {
+  color: #5556a9;
+}
+.mj-tile.back {
+  color: var(--mint);
+  background: #685384;
+}
+.mj-last {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  font-size: 12px;
+}
+.mj-hand {
+  margin-top: 9px;
+  padding-top: 7px;
+}
+.mj-select {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  min-height: 0;
+  border-radius: 3px;
+}
+.mj-select:disabled {
+  opacity: 1;
+}
+.mj-select.selected .mj-tile {
+  transform: translateY(-5px);
+  outline: 2px solid var(--mint);
+}
+.mj-select.void-tile .mj-tile {
+  border-color: var(--gold);
+}
+.mj-melds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.mj-melds small {
+  font-size: 9px;
+}
+.mj-melds .mj-tile,
+.mj-river .mj-tile {
+  width: 22px;
+  height: 31px;
+  font-size: 9px;
+}
+.mj-melds .mj-tile b,
+.mj-river .mj-tile b {
+  font-size: 12px;
+}
+.mj-river {
+  font-size: 11px;
+  margin-top: 8px;
+}
+.mj-river .mj-tiles {
+  justify-content: center;
+  padding: 8px 0;
+}
+.mahjong .result-banner {
+  font-size: 11px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 520px) {
+  .mahjong #seats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .mj-seat.me {
+    grid-row: 3;
+  }
+  .mj-seat {
+    padding: 7px;
+  }
+  .mj-seat .seat-name {
+    font-size: 10px;
+    overflow-wrap: anywhere;
+  }
+  .mj-seat .seat-stack {
+    font-size: 9px;
+  }
+  .mj-seat .bj-player {
+    gap: 4px;
+  }
+  .mj-seat .avatar {
+    width: 24px;
+    height: 24px;
+  }
+  .mj-seat .avatar svg {
+    width: 22px;
+    height: 22px;
+  }
+  .mj-hand .mj-tile {
+    width: 27px;
+    height: 39px;
+  }
+  .mahjong .board-status {
+    font-size: 10px;
+  }
+}

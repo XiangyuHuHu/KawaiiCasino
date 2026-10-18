@@ -11,6 +11,7 @@ const root = new URL("../public/", import.meta.url);
 const files = {
   "/": ["index.html", "text/html; charset=utf-8"],
   "/app.js": ["app.js", "text/javascript; charset=utf-8"],
+  "/games/mahjong.js": ["games/mahjong.js", "text/javascript; charset=utf-8"],
   "/games/doudizhu.js": ["games/doudizhu.js", "text/javascript; charset=utf-8"],
   "/games/blackjack.js": [
     "games/blackjack.js",
