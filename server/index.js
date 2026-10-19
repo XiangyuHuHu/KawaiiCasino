@@ -35,10 +35,25 @@ function envMillis(name, fallback) {
 }
 
 export function createCasino({
+  publicUrls = process.env.PUBLIC_URLS || "",
   botDelay = envMillis("BOT_DELAY_MS", 1000),
   tickInterval = 300,
   actionTimeout = envMillis("ACTION_TIMEOUT_MS", 35000),
 } = {}) {
+  const advertisedAddresses = publicUrls
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .map((value) => {
+      const url = new URL(value);
+      if (
+        !["http:", "https:"].includes(url.protocol) ||
+        url.username ||
+        url.password
+      )
+        throw new Error("PUBLIC_URLS 必须是 HTTP/HTTPS 地址");
+      return url.origin;
+    });
   const rooms = new Map();
   const server = http.createServer(async (req, res) => {
     const pathname = new URL(req.url, "http://localhost").pathname;
@@ -52,10 +67,12 @@ export function createCasino({
     }
     if (pathname === "/api/addresses") {
       const port = server.address()?.port;
-      const addresses = Object.values(networkInterfaces())
-        .flat()
-        .filter((n) => n.family === "IPv4" && !n.internal)
-        .map((n) => `http://${n.address}:${port}`);
+      const addresses = advertisedAddresses.length
+        ? advertisedAddresses
+        : Object.values(networkInterfaces())
+            .flat()
+            .filter((n) => n.family === "IPv4" && !n.internal)
+            .map((n) => `http://${n.address}:${port}`);
       res.writeHead(200, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({ addresses }));
     }
@@ -95,6 +112,7 @@ export function createCasino({
           hostId: room.hostId,
           me: p.id,
           gameType: room.gameType,
+          mode: room.mode || "multiplayer",
           game: gameMetadata(room.gameType),
           ...room.table.view(p.id),
           messages: room.messages,
@@ -180,6 +198,7 @@ export function createCasino({
       const room = {
         code,
         gameType,
+        mode: input.solo === true ? "solo" : "multiplayer",
         table: new Engine({ smallBlind, stack, actionTimeout }),
         messages: [],
         updated: Date.now(),
@@ -189,6 +208,31 @@ export function createCasino({
         token: randomBytes(24).toString("hex"),
         avatar: Number.isInteger(input.avatar) ? Math.abs(input.avatar % 8) : 0,
       });
+      if (room.mode === "solo") {
+        const names = [
+          "薄荷团子",
+          "桃桃汽水",
+          "午夜布丁",
+          "星星奶糖",
+          "奶盖小熊",
+          "月亮松饼",
+          "抹茶狐狸",
+          "椰椰小猫",
+          "橘子海",
+          "芝士年糕",
+        ].filter((candidate) => candidate !== p.name);
+        for (let i = names.length - 1; i > 0; i--) {
+          const j = randomInt(i + 1);
+          [names[i], names[j]] = [names[j], names[i]];
+        }
+        const { maxPlayers } = games.get(gameType);
+        for (let i = 0; i < maxPlayers - 1; i++)
+          room.table.addPlayer(names[i], {
+            bot: true,
+            avatar: (p.avatar + i + 1) % 8,
+          });
+        room.table.start();
+      }
       rooms.set(code, room);
       return enter(room, p);
     });
@@ -196,6 +240,8 @@ export function createCasino({
       if (socket.data.code) throw new Error("请先离开当前房间");
       const room = rooms.get(String(input.code));
       if (!room) throw new Error("房间不存在，请检查六位房间号");
+      if (room.mode === "solo")
+        throw new Error("这是单人娱乐房间，请创建多人房间邀请朋友");
       room.table.prune();
       const p = room.table.addPlayer(cleanName(input.name), {
         token: randomBytes(24).toString("hex"),
@@ -223,6 +269,14 @@ export function createCasino({
     const startRound = () => {
       const { room } = host();
       room.table.prune();
+      if (room.mode === "solo" && !room.table.playing) {
+        const minimum = room.table.baseStake ?? room.table.minBet ?? 1;
+        for (const p of room.table.players)
+          if (p.stack < minimum) {
+            p.stack = room.table.buyIn;
+            room.table.log(`${p.name} 补充娱乐筹码至 ${p.stack}`);
+          }
+      }
       room.table.start();
       emit(room);
     };

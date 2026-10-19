@@ -1,0 +1,25 @@
+name: kawaii-casino
+
+services:
+  casino:
+    build: .
+    image: kawaii-casino:local
+    container_name: KawaiiCasino
+    restart: unless-stopped
+    init: true
+    ports:
+      - "${CASINO_PORT:-4399}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      PUBLIC_URLS: "${PUBLIC_URLS:-}"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

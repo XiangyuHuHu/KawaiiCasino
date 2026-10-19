@@ -157,9 +157,9 @@ function render() {
   $("#connection-dot").classList.toggle("online", online);
   $("#connection-text").textContent = online ? "局域网已连接" : "正在重连…";
   $("#room-label").textContent = state
-    ? `${state.game.name} · ${state.code}`
+    ? `${state.game.name} · ${state.mode === "solo" ? "单人娱乐" : state.code}`
     : "朋友小局 · 开放入座";
-  $("#invite-button").hidden = !state;
+  $("#invite-button").hidden = !state || state.mode === "solo";
   $("#leave-button").hidden = !state;
   $("#hand-label").textContent = state
     ? `HAND #${String(state.hand).padStart(3, "0")} · NO RAKE, JUST FUN.`
@@ -190,10 +190,21 @@ function render() {
   $("#chat-send").disabled = !state || !online;
   if (!state) {
     $("#room-panel").innerHTML =
-      '<span class="panel-decoration">✧</span><span class="eyebrow">WELCOME TO THE CLUB</span><h2>今晚，来一手。</h2><p>把好运留在牌桌，<br>把快乐分享给朋友。</p><button class="primary wide" data-command="create">创建房间 <span>＋</span></button><button class="secondary wide" data-command="join">加入朋友的牌桌 <span>↗</span></button>';
+      '<span class="panel-decoration">✧</span><span class="eyebrow">WELCOME TO THE CLUB</span><h2>今晚，来一手。</h2><p>自己玩，随机机器人随时奉陪。<br>和朋友玩，开一桌就好。</p><button class="primary wide" data-command="solo">单人娱乐 <span>♠</span></button><button class="secondary wide" data-command="create">创建房间 · 多人 <span>＋</span></button><button class="secondary wide" data-command="join">加入朋友的牌桌 <span>↗</span></button>';
   } else {
     $("#room-panel").innerHTML =
-      `<span class="panel-decoration">✧</span><span class="eyebrow">MAKE YOURSELF AT HOME</span><div class="room-code-display"><small>房间号 · ${host ? "你是房主" : "朋友的牌桌"}</small>${state.code}</div><p>${playing ? "牌局进行中，好运正在路上。" : "朋友到齐，随时可以开始。"}</p><button class="primary wide" data-command="deal" ${!host || playing || !online || state.players.filter((p) => p.connected && p.stack >= (doudizhu || mahjong || guandan ? state.baseStake : blackjack ? state.minBet : 1) && !p.left).length < (state.game?.minPlayers || 2) ? "disabled" : ""}>${playing ? "牌局进行中" : host ? (state.hand ? "再来一手" : "开始发牌") : "等待房主发牌"} <span>♠</span></button><div class="room-controls">${host ? `<button data-command="bots" ${playing || !online || state.players.length >= maxPlayers ? "disabled" : ""}>＋ 练习伙伴</button>` : ""}<button data-command="rebuy" ${playing || !online || me.stack >= state.buyIn ? "disabled" : ""}>补充筹码</button><button data-command="invite">邀请朋友 ↗</button></div>`;
+      `<span class="panel-decoration">✧</span><span class="eyebrow">MAKE YOURSELF AT HOME</span><div class="room-code-display"><small>房间号 · ${host ? "你是房主" : "朋友的牌桌"}</small>${state.code}</div><p>${playing ? "牌局进行中，好运正在路上。" : "朋友到齐，随时可以开始。"}</p><button class="primary wide" data-command="deal" ${!host || playing || !online || (state.mode !== "solo" && state.players.filter((p) => p.connected && p.stack >= (doudizhu || mahjong || guandan ? state.baseStake : blackjack ? state.minBet : 1) && !p.left).length < (state.game?.minPlayers || 2)) ? "disabled" : ""}>${playing ? "牌局进行中" : host ? (state.hand ? "再来一手" : "开始发牌") : "等待房主发牌"} <span>♠</span></button><div class="room-controls">${host ? `<button data-command="bots" ${playing || !online || state.players.length >= maxPlayers ? "disabled" : ""}>＋ 练习伙伴</button>` : ""}<button data-command="rebuy" ${playing || !online || me.stack >= state.buyIn ? "disabled" : ""}>补充筹码</button><button data-command="invite">邀请朋友 ↗</button></div>`;
+  }
+  if (state?.mode === "solo") {
+    const panel = $("#room-panel");
+    panel.querySelector(".room-code-display").innerHTML =
+      `<small>单人娱乐 · ${esc(state.game.name)}</small><span class="solo-table-label">你 + ${state.players.filter((p) => p.bot).length} 位机器人</span>`;
+    panel.querySelector("p").textContent = playing
+      ? "机器人正在陪你玩，随时按自己的节奏出牌。"
+      : "这局结束了，再来一手吧。";
+    panel
+      .querySelectorAll('[data-command="invite"], [data-command="bots"]')
+      .forEach((button) => button.remove());
   }
   const renderers = {
     guandan: () => renderGuandan(state, { $, card, avatar, esc, fmt, online }),
@@ -244,6 +255,7 @@ function renderPoker() {
     [85, 65],
   ];
   const occupiedPositions = {
+    1: [0],
     2: [0, 4],
     3: [0, 3, 5],
     4: [0, 2, 4, 6],
@@ -256,7 +268,9 @@ function renderPoker() {
     const index = state
       ? offset < 0
         ? -1
-        : (meIndex + offset) % players.length
+        : offset >= players.length
+          ? -1
+          : (meIndex + offset) % players.length
       : i;
     const p = players[index];
     const [x, y] = state ? positions[i] : lobbyPositions[i];
@@ -281,7 +295,7 @@ function renderPoker() {
   area.classList.toggle("playing", !!playing);
   if (!state) {
     area.innerHTML =
-      '<div class="action-welcome"><span class="action-icon">♠</span><div><div class="action-title">你的座位，已经留好了。</div><div class="action-subtitle">和朋友连上同一个 Wi-Fi，就能围坐一桌。</div></div></div><button class="primary" data-command="create">入座开玩 ↗</button>';
+      '<div class="action-welcome"><span class="action-icon">♠</span><div><div class="action-title">你的座位，已经留好了。</div><div class="action-subtitle">一个人也能玩，其他座位自动加入随机机器人。</div></div></div><button class="primary" data-command="solo">入座开玩 ↗</button>';
   } else if (!online) {
     area.innerHTML =
       '<div class="reconnect-banner">连接暂时断开，正在重新连接到牌桌…</div>';
@@ -353,15 +367,21 @@ function updateTimer() {
     );
 }
 setInterval(updateTimer, 250);
-function openRoom(type) {
+function openRoom(type, gameType) {
   mode = type;
   $("#dialog-title").textContent =
-    type === "create" ? "开一桌，等朋友。" : "朋友的牌桌，等你入座。";
+    type === "solo"
+      ? "自己玩，搭子已就位。"
+      : type === "create"
+        ? "开一桌，等朋友。"
+        : "朋友的牌桌，等你入座。";
   $("#join-fields").hidden = type !== "join";
-  $("#create-fields").hidden = type !== "create";
+  $("#create-fields").hidden = type === "join";
   $("#room-code").required = type === "join";
   $("#room-submit").innerHTML =
-    `${type === "create" ? "创建房间" : "加入牌桌"} <span>↗</span>`;
+    `${type === "solo" ? "开始单人游戏" : type === "create" ? "创建房间" : "加入牌桌"} <span>↗</span>`;
+  if (gameType) $("#game-select").value = gameType;
+  $("#game-select").onchange();
   $("#form-error").textContent = "";
   $("#nickname").value = getName();
   renderAvatars();
@@ -412,8 +432,24 @@ document.addEventListener("click", async (event) => {
     selectedAvatar = Number(button.dataset.avatar);
     return renderAvatars();
   }
+  if (button.dataset.pickGame) {
+    if (state) {
+      if (!confirm("切换游戏需要离开当前牌桌，确定继续？")) return;
+      try {
+        await request("leave");
+      } catch (err) {
+        return toast(err.message);
+      }
+      saveSession(null);
+      state = null;
+      history.replaceState(null, "", "/");
+      render();
+    }
+    $("#games-dialog").close();
+    return openRoom($("#menu-mode").value, button.dataset.pickGame);
+  }
   const commandName = button.dataset.command;
-  if (commandName === "create" || commandName === "join")
+  if (["create", "join", "solo"].includes(commandName))
     return openRoom(commandName);
   if (commandName === "invite") return showInvite();
   if (commandName) return command(commandName);
@@ -451,7 +487,8 @@ $("#room-form").addEventListener("submit", async (event) => {
   $("#form-error").textContent = "";
   try {
     const name = $("#nickname").value.trim();
-    const result = await request(mode, {
+    const result = await request(mode === "solo" ? "create" : mode, {
+      solo: mode === "solo",
       name,
       avatar: selectedAvatar,
       code: $("#room-code").value,
@@ -464,7 +501,11 @@ $("#room-form").addEventListener("submit", async (event) => {
     $("#room-dialog").close();
     history.replaceState(null, "", `/?room=${result.code}`);
     toast(
-      mode === "create" ? "房间已开好，邀请朋友入座吧。" : "入座成功，好运！",
+      mode === "solo"
+        ? "随机机器人已入座，游戏开始！"
+        : mode === "create"
+          ? "房间已开好，邀请朋友入座吧。"
+          : "入座成功，好运！",
     );
   } catch (err) {
     $("#form-error").textContent = err.message;
@@ -530,7 +571,21 @@ $("#game-select").onchange = () => {
   $("#room-form .form-note").textContent =
     `${guandan ? "4 人组队 · 底分 10" : mahjong ? "4 人 · 底分 10" : doudizhu ? "3 人 · 底分 10" : blackjack ? "1–5 人 · 最低下注 10" : "2–8 人"} · 无需注册 · 虚拟筹码`;
   updateGameRulesTip();
+  const maxPlayers =
+    gameCatalog.find((g) => g.gameType === $("#game-select").value)
+      ?.maxPlayers ||
+    { poker: 8, blackjack: 5, doudizhu: 3, mahjong: 4, guandan: 4 }[
+      $("#game-select").value
+    ];
+  $("#room-description").textContent =
+    mode === "solo"
+      ? `其余 ${maxPlayers - 1} 个座位自动加入随机机器人，创建后立即开局。`
+      : "同一个 Wi-Fi，一张牌桌。今晚好运属于谁？";
+  if (mode === "solo")
+    $("#room-form .form-note").textContent =
+      `1 位真人 + ${maxPlayers - 1} 位机器人 · 虚拟筹码`;
 };
+$("#more-games-button").onclick = () => $("#games-dialog").showModal();
 $("#invite-button").onclick = showInvite;
 $("#copy-invite").onclick = async () => {
   try {

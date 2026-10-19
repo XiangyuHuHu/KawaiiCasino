@@ -2247,3 +2247,63 @@ dialog .muted {
     align-items: flex-start;
   }
 }
+.more-games-button {
+  background: transparent;
+  border-color: transparent;
+  color: var(--lavender);
+  white-space: nowrap;
+  font-size: 12px;
+  padding: 8px 10px;
+}
+.game-choices {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+.game-choices button {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  text-align: left;
+  gap: 4px 12px;
+  padding: 14px;
+}
+.game-choices button > span {
+  grid-row: 1/3;
+  align-self: center;
+  text-align: center;
+  font-size: 25px;
+  color: var(--lavender);
+}
+.game-choices b {
+  font-size: 15px;
+}
+.game-choices small {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.solo-table-label {
+  font-size: 21px;
+  letter-spacing: 1px;
+}
+@media (max-width: 520px) {
+  .topbar {
+    gap: 10px;
+  }
+  .topbar nav {
+    gap: 5px;
+  }
+  .more-games-button {
+    font-size: 11px;
+    padding: 7px 5px;
+  }
+  .connection #connection-text {
+    display: none;
+  }
+  .game-choices button {
+    padding: 12px;
+  }
+  .solo-table-label {
+    font-size: 16px;
+  }
+}

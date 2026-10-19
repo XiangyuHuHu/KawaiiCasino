@@ -20,7 +20,9 @@
       >
       <nav aria-label="游戏">
         <span class="nav-active" id="game-name">游戏大厅</span
-        ><span class="coming">更多游戏 <small>SOON</small></span>
+        ><button id="more-games-button" class="more-games-button">
+          更多游戏 ▾
+        </button>
       </nav>
       <div class="connection">
         <span id="connection-dot" class="dot"></span
@@ -141,13 +143,45 @@
         </div>
       </aside>
     </main>
+    <dialog id="games-dialog">
+      <button class="dialog-close" data-close aria-label="关闭">×</button>
+      <span class="eyebrow">PICK YOUR GAME</span>
+      <h1>今天，玩点什么？</h1>
+      <label for="menu-mode">游玩方式</label
+      ><select id="menu-mode">
+        <option value="solo">单人娱乐 · 自动加入机器人</option>
+        <option value="create">局域网多人 · 创建房间</option>
+      </select>
+      <div class="game-choices">
+        <button data-pick-game="poker">
+          <span>♠</span><b>德州扑克</b
+          ><small>单人 + 7 位机器人 / 2–8 人联机</small>
+        </button>
+        <button data-pick-game="blackjack">
+          <span>21</span><b>21点</b
+          ><small>挑战庄家 · 要牌、停牌、加倍、分牌</small>
+        </button>
+        <button data-pick-game="doudizhu">
+          <span>♣</span><b>斗地主</b><small>单人 + 2 位机器人 / 3 人联机</small>
+        </button>
+        <button data-pick-game="mahjong">
+          <span>發</span><b>麻将</b
+          ><small>简化四川规则 · 单人 + 3 位机器人</small>
+        </button>
+        <button data-pick-game="guandan">
+          <span>♦</span><b>掼蛋</b><small>双人组队 · 单人 + 3 位机器人</small>
+        </button>
+      </div>
+    </dialog>
     <dialog id="room-dialog">
       <form id="room-form">
         <button type="button" class="dialog-close" data-close aria-label="关闭">
           ×</button
         ><span class="eyebrow">YOUR SEAT IS WAITING</span>
         <h1 id="dialog-title">开一桌，等朋友。</h1>
-        <p class="muted">同一个 Wi-Fi，一张牌桌。今晚好运属于谁？</p>
+        <p class="muted" id="room-description">
+          同一个 Wi-Fi，一张牌桌。今晚好运属于谁？
+        </p>
         <label for="nickname">你的昵称</label
         ><input
           id="nickname"
