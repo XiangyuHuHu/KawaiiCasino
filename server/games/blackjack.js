@@ -1,5 +1,19 @@
 import { randomInt, randomUUID } from "node:crypto";
 
+// Betting varies by bankroll and personality; this does not predict the next cards.
+export function botBet(stack, minBet, style, choice = randomInt(4)) {
+  const fractions = [
+    [0.005, 0.0075, 0.01, 0.015],
+    [0.01, 0.015, 0.02, 0.025],
+    [0.015, 0.02, 0.03, 0.04],
+  ];
+  const fraction = fractions[style % 3][choice % 4];
+  return Math.min(
+    stack,
+    Math.max(minBet, Math.floor((stack * fraction) / minBet) * minBet),
+  );
+}
+
 export function handValue(cards) {
   let total = 0,
     aces = 0;
@@ -282,7 +296,13 @@ export class BlackjackTable {
     const legal = this.legal(id);
     if (!legal) return;
     if (this.stage === "betting")
-      return this.act(id, "bet", bot ? Math.min(100, legal.max) : this.minBet);
+      return this.act(
+        id,
+        "bet",
+        bot
+          ? botBet(legal.max, this.minBet, this.players[this.turn].avatar)
+          : this.minBet,
+      );
     if (!bot) return this.act(id, "stand");
     const p = this.players[this.turn],
       h = p.hands[this.activeHand];

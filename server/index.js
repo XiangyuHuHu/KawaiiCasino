@@ -293,26 +293,52 @@ export function createCasino({
       room.table.action(player.id, input);
       emit(room);
     });
-    event("bots", () => {
+    event("bots", (input) => {
       const { room } = host();
-      if (room.table.playing) throw new Error("请等本手结束再添加练习伙伴");
       room.table.prune();
       const game = games.get(room.gameType);
       if (!game.bots) throw new Error("此游戏暂不支持练习伙伴");
-      const baseNames = ["薄荷团子", "桃桃汽水", "午夜布丁", "星星奶糖"];
-      const names = Array.from(
-        { length: game.practiceBots ?? game.maxPlayers - 1 },
-        (_, i) =>
-          baseNames[i % baseNames.length] + (i < baseNames.length ? "" : i + 1),
+      const free = game.maxPlayers - room.table.players.length;
+      if (!free) throw new Error("牌桌已满");
+      const requested = input.count ?? game.practiceBots ?? free;
+      if (
+        !Number.isSafeInteger(requested) ||
+        requested < 1 ||
+        requested > game.maxPlayers
+      )
+        throw new Error("机器人数量无效");
+      const names = [
+        "薄荷团子",
+        "桃桃汽水",
+        "午夜布丁",
+        "星星奶糖",
+        "奶盖小熊",
+        "月亮松饼",
+        "抹茶狐狸",
+        "椰椰小猫",
+        "橘子海",
+        "芝士年糕",
+      ].filter((name) => !room.table.players.some((p) => p.name === name));
+      for (let i = names.length - 1; i > 0; i--) {
+        const j = randomInt(i + 1);
+        [names[i], names[j]] = [names[j], names[i]];
+      }
+      const count = Math.min(requested, free);
+      for (let i = 0; i < count; i++)
+        room.table.addPlayer(names[i], { bot: true, avatar: randomInt(8) });
+      room.table.log(
+        `加入 ${count} 位机器人${room.table.playing ? "，下一手入局" : ""}`,
       );
-      let count = 0;
-      for (const name of names)
-        if (
-          room.table.players.length < game.maxPlayers &&
-          !room.table.players.some((p) => p.bot && p.name === name)
-        ) {
-          room.table.addPlayer(name, { bot: true, avatar: count++ + 1 });
-        }
+      emit(room);
+    });
+    event("removeBot", () => {
+      const { room } = host();
+      if (room.table.playing) throw new Error("请等本手结束再移除机器人");
+      const bot = [...room.table.players].reverse().find((p) => p.bot);
+      if (!bot) throw new Error("牌桌上没有机器人");
+      room.table.remove(bot.id);
+      room.table.prune();
+      room.table.log(`机器人 ${bot.name} 离桌，座位已空出`);
       emit(room);
     });
     event("rebuy", () => {

@@ -185,11 +185,13 @@ test("21点 Socket.IO：注册表、机器人自动下注、完整结算、补�
       a.state.players.reduce((n, p) => n + p.stack, 0) + a.state.houseNet,
       50000,
     );
-    assert.equal(a.state.houseNet, -380);
+    const expectedHouseNet =
+      20 - a.state.players.slice(1).reduce((sum, p) => sum + p.hands[0].bet, 0);
+    assert.equal(a.state.houseNet, expectedHouseNet);
     assert.ok(a.state.dealerCards.every(Boolean));
     assert.ok((await send(a, "rebuy")).ok);
     assert.equal(a.state.players[0].stack, 10000);
-    assert.equal(a.state.houseNet, -380);
+    assert.equal(a.state.houseNet, expectedHouseNet);
     a.disconnect();
     const resumed = await connect();
     assert.ok(

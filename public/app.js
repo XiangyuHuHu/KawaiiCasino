@@ -148,6 +148,7 @@ function render() {
   const mahjong = state?.gameType === "mahjong";
   const guandan = state?.gameType === "guandan";
   const maxPlayers = state?.game?.maxPlayers || 8;
+  $("#mahjong-records").hidden = !mahjong;
   $("#table-scene").classList.toggle("doudizhu", doudizhu || guandan);
   $("#table-scene").classList.toggle("mahjong", mahjong);
   $("#table-scene").classList.toggle("guandan", guandan);
@@ -193,7 +194,7 @@ function render() {
       '<span class="panel-decoration">✧</span><span class="eyebrow">WELCOME TO THE CLUB</span><h2>今晚，来一手。</h2><p>自己玩，随机机器人随时奉陪。<br>和朋友玩，开一桌就好。</p><button class="primary wide" data-command="solo">单人娱乐 <span>♠</span></button><button class="secondary wide" data-command="create">创建房间 · 多人 <span>＋</span></button><button class="secondary wide" data-command="join">加入朋友的牌桌 <span>↗</span></button>';
   } else {
     $("#room-panel").innerHTML =
-      `<span class="panel-decoration">✧</span><span class="eyebrow">MAKE YOURSELF AT HOME</span><div class="room-code-display"><small>房间号 · ${host ? "你是房主" : "朋友的牌桌"}</small>${state.code}</div><p>${playing ? "牌局进行中，好运正在路上。" : "朋友到齐，随时可以开始。"}</p><button class="primary wide" data-command="deal" ${!host || playing || !online || (state.mode !== "solo" && state.players.filter((p) => p.connected && p.stack >= (doudizhu || mahjong || guandan ? state.baseStake : blackjack ? state.minBet : 1) && !p.left).length < (state.game?.minPlayers || 2)) ? "disabled" : ""}>${playing ? "牌局进行中" : host ? (state.hand ? "再来一手" : "开始发牌") : "等待房主发牌"} <span>♠</span></button><div class="room-controls">${host ? `<button data-command="bots" ${playing || !online || state.players.length >= maxPlayers ? "disabled" : ""}>＋ 练习伙伴</button>` : ""}<button data-command="rebuy" ${playing || !online || me.stack >= state.buyIn ? "disabled" : ""}>补充筹码</button><button data-command="invite">邀请朋友 ↗</button></div>`;
+      `<span class="panel-decoration">✧</span><span class="eyebrow">MAKE YOURSELF AT HOME</span><div class="room-code-display"><small>房间号 · ${host ? "你是房主" : "朋友的牌桌"}</small>${state.code}</div><p>${playing ? "牌局进行中，好运正在路上。" : "朋友到齐，随时可以开始。"}</p><button class="primary wide" data-command="deal" ${!host || playing || !online || (state.mode !== "solo" && state.players.filter((p) => p.connected && p.stack >= (doudizhu || mahjong || guandan ? state.baseStake : blackjack ? state.minBet : 1) && !p.left).length < (state.game?.minPlayers || 2)) ? "disabled" : ""}>${playing ? "牌局进行中" : host ? (state.hand ? "再来一手" : "开始发牌") : "等待房主发牌"} <span>♠</span></button><div class="room-controls">${host ? `<button data-command="bots" ${!online || state.players.length >= maxPlayers ? "disabled" : ""}>＋ 练习伙伴</button><button data-command="fillBots" ${!online || state.players.length >= maxPlayers ? "disabled" : ""}>补齐机器人</button><button data-command="removeBot" ${playing || !online || !state.players.some((p) => p.bot) ? "disabled" : ""}>－ 机器人</button>` : ""}<button data-command="rebuy" ${playing || !online || me.stack >= state.buyIn ? "disabled" : ""}>补充筹码</button><button data-command="invite">邀请朋友 ↗</button></div>`;
   }
   if (state?.mode === "solo") {
     const panel = $("#room-panel");
@@ -204,6 +205,9 @@ function render() {
       : "这局结束了，再来一手吧。";
     panel
       .querySelectorAll('[data-command="invite"], [data-command="bots"]')
+      .forEach((button) => button.remove());
+    panel
+      .querySelectorAll('[data-command="fillBots"], [data-command="removeBot"]')
       .forEach((button) => button.remove());
   }
   const renderers = {
@@ -452,6 +456,10 @@ document.addEventListener("click", async (event) => {
   if (["create", "join", "solo"].includes(commandName))
     return openRoom(commandName);
   if (commandName === "invite") return showInvite();
+  if (commandName === "fillBots")
+    return command("bots", {
+      count: state.game.maxPlayers - state.players.length,
+    });
   if (commandName) return command(commandName);
   if (button.dataset.action && state?.legal) {
     button.disabled = true;

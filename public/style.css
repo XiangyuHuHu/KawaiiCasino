@@ -2307,3 +2307,361 @@ dialog .muted {
     font-size: 16px;
   }
 }
+.room-controls {
+  flex-wrap: wrap;
+}
+.room-controls button {
+  min-width: 68px;
+}
+.table-scene.mahjong {
+  background: radial-gradient(
+    ellipse at 50% 25%,
+    #325b50,
+    #203c36 65%,
+    #182c2b
+  );
+  border: 1px solid #607c64;
+  box-shadow:
+    inset 0 0 0 5px #121f21,
+    inset 0 0 0 7px #71816b44;
+  padding: 24px 18px;
+}
+.mahjong .rail,
+.mahjong .ambient {
+  display: none;
+}
+.mahjong .board-status,
+.mahjong .mj-last {
+  color: #d0dfbd;
+}
+.mj-seat {
+  background: linear-gradient(140deg, #29443de8, #20312fe8);
+  border-color: #547363;
+  border-radius: 10px;
+  padding: 12px;
+}
+.mj-seat.me {
+  background: linear-gradient(140deg, #304d40, #233f34);
+  border-color: #a2b98a;
+  box-shadow: inset 0 1px 0 #e4efc522;
+}
+.mj-seat .seat-name {
+  color: #e7ebd1;
+}
+.mj-seat .bj-player small {
+  color: #b3c5ad;
+}
+.mj-seat.current {
+  box-shadow:
+    0 0 0 1px #b3d8ad66,
+    inset 0 0 25px #b3d8ad0a;
+}
+.mj-tile {
+  position: relative;
+  width: 38px;
+  height: 55px;
+  gap: 0;
+  padding: 4px 2px 5px;
+  overflow: hidden;
+  background: linear-gradient(115deg, #fffef3 0%, #eee8ce 100%);
+  border: 1px solid #dfd8ba;
+  border-bottom: 6px solid #4b8973;
+  border-radius: 5px;
+  box-shadow:
+    1px 1px 0 #c4c19e,
+    2px 3px 0 #194d3e,
+    3px 5px 4px #101e2455;
+  color: #ad3b3a;
+  line-height: 1;
+  vertical-align: middle;
+}
+.mj-corner {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  font-size: 6px;
+  line-height: 1;
+  font-weight: 600;
+  color: #7b806c;
+  z-index: 1;
+}
+.mj-face {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.mj-wan-number {
+  font-family: KaiTi, STKaiti, SimSun, serif;
+  font-size: 23px;
+  color: #29383a;
+  font-weight: 700;
+  line-height: 1.02;
+}
+.mj-wan-mark {
+  font-family: KaiTi, STKaiti, SimSun, serif;
+  font-size: 21px;
+  font-weight: 700;
+  color: #ab3437;
+  line-height: 1.1;
+}
+.mj-tile.back {
+  border-color: #91a789;
+  border-bottom-color: #356f58;
+  background:
+    repeating-linear-gradient(45deg, #3d735d 0 3px, #487e6533 3px 5px), #4b8069;
+  color: #dddfad;
+}
+.mj-back-emblem {
+  font-size: 27px;
+  border: 1px solid #b7ca92;
+  padding: 3px;
+  border-radius: 3px;
+  line-height: 1;
+}
+.mj-hand {
+  gap: 5px;
+  margin-top: 15px;
+  padding: 14px 6px 9px;
+  border-top: 1px solid #b0c38a33;
+  align-items: end;
+}
+.mj-hand .mj-tile {
+  width: 38px;
+  height: 55px;
+}
+.mj-select {
+  transition: transform 0.12s;
+  border-radius: 5px;
+}
+.mj-select:hover:enabled {
+  background: none;
+  transform: translateY(-3px);
+}
+.mj-select.selected .mj-tile {
+  transform: translateY(-8px);
+  outline: 2px solid #f5d992;
+  box-shadow:
+    0 0 12px #f3d89355,
+    2px 3px 0 #194d3e;
+}
+.mj-select.void-tile .mj-tile {
+  border-top: 2px solid #e7bc6f;
+}
+.mj-melds .mj-tile {
+  width: 26px;
+  height: 38px;
+  padding: 3px 1px;
+  border-bottom-width: 4px;
+}
+.mj-melds .mj-wan-number {
+  font-size: 15px;
+}
+.mj-melds .mj-wan-mark {
+  font-size: 14px;
+}
+.mj-record-panel {
+  background: #211b2a;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  max-height: 380px;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #665374 transparent;
+  grid-column: 1/-1;
+}
+.mj-record-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.mj-record-title small {
+  font-size: 9px;
+  color: var(--muted);
+}
+.mj-record-note {
+  font-size: 9px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin: 8px 0 13px;
+}
+.mj-river-groups {
+  display: grid;
+  gap: 12px;
+}
+.mj-record-name {
+  font-size: 10px;
+  color: #ddcde6;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 7px;
+}
+.mj-record-name small {
+  font-size: 9px;
+  color: var(--muted);
+}
+.mj-record-group .mj-tiles {
+  gap: 5px;
+  align-items: flex-start;
+}
+.mj-no-discard {
+  font-size: 9px;
+  color: #7d6d8c;
+}
+.mj-discard {
+  position: relative;
+  display: inline-flex;
+  padding-bottom: 12px;
+}
+.mj-discard .mj-tile {
+  width: 25px;
+  height: 36px;
+  border-bottom-width: 4px;
+  padding: 2px 1px 3px;
+  border-radius: 3px;
+}
+.mj-discard .mj-wan-number {
+  font-size: 15px;
+}
+.mj-discard .mj-wan-mark {
+  font-size: 13px;
+}
+.mj-discard .mj-corner {
+  display: none;
+}
+.mj-sequence {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 7px;
+  color: #9c8bac;
+  line-height: 1;
+}
+.mj-discard.recent .mj-tile {
+  outline: 1px solid var(--gold);
+  box-shadow: 0 0 8px #efcf8944;
+}
+.mj-discard.claimed .mj-tile {
+  opacity: 0.6;
+}
+.mj-claim-badge {
+  position: absolute;
+  right: -3px;
+  top: -3px;
+  border-radius: 3px;
+  background: #c6a7df;
+  color: #271c31;
+  font-size: 8px;
+  font-style: normal;
+  padding: 2px;
+  line-height: 1;
+}
+.mj-chronology {
+  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  padding-top: 10px;
+  font-size: 10px;
+  color: #b39ac5;
+}
+.mj-chronology summary {
+  cursor: pointer;
+}
+.mj-chronology ol {
+  list-style: none;
+  padding: 0;
+  font-size: 10px;
+  line-height: 1.8;
+  color: #d7c6e2;
+  margin-bottom: 0;
+}
+.mj-chronology li span {
+  color: var(--gold);
+  font-size: 9px;
+  margin-right: 4px;
+}
+@media (max-width: 520px) {
+  .table-scene.mahjong {
+    padding: 17px 10px;
+  }
+  .mj-seat {
+    padding: 9px;
+  }
+  .mj-hand {
+    display: grid;
+    grid-template-columns: repeat(14, minmax(0, 1fr));
+    gap: 2px;
+    padding: 14px 0 7px;
+  }
+  .mj-hand .mj-select,
+  .mj-hand .mj-tile {
+    width: 100%;
+    min-width: 0;
+  }
+  .mj-hand .mj-tile {
+    height: 37px;
+    padding: 3px 1px;
+    border-bottom-width: 4px;
+    border-radius: 3px;
+  }
+  .mj-hand .mj-wan-number {
+    font-size: 16px;
+  }
+  .mj-hand .mj-wan-mark {
+    font-size: 14px;
+  }
+  .mj-hand .mj-corner {
+    font-size: 5px;
+    top: 1px;
+    left: 1px;
+  }
+  .mj-record-panel {
+    max-height: 360px;
+    padding: 14px;
+  }
+  .mj-river-groups {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .mj-record-group .mj-tiles {
+    gap: 4px;
+  }
+  .mj-discard .mj-tile {
+    width: 22px;
+    height: 32px;
+  }
+  .mj-discard .mj-wan-number {
+    font-size: 13px;
+  }
+  .mj-discard .mj-wan-mark {
+    font-size: 12px;
+  }
+  .mahjong #seats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .mj-seat.me {
+    grid-row: 2;
+  }
+  .mj-seat:not(.me) .bj-player {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  .mj-seat:not(.me) .mj-hand {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-top: 9px;
+  }
+  .mj-seat:not(.me) .mj-hand .mj-tile {
+    width: 27px;
+    height: 38px;
+  }
+  .mj-seat:not(.me) .seat-stack {
+    line-height: 1.7;
+  }
+}

@@ -565,3 +565,38 @@ test("结算后离桌清理和补位，赢家名称/身份不变，保留赢家�
   assert.equal(t.outcome.winnerName, winner.name);
   assert.equal(t.view(t.players[0].id).outcome.winnerName, winner.name);
 });
+test("完整出牌记录保留玩家、顺序、碰牌去向；视图安全复制并在新手清空", () => {
+  const t = discardFixture();
+  const played = t.players[0].tiles[0];
+  t.action(t.players[0].id, { type: "discard", tile: played.id });
+  t.action(t.players[1].id, { type: "pass" });
+  t.action(t.players[2].id, { type: "pass" });
+  t.action(t.players[3].id, { type: "pong" });
+  assert.equal(t.discards.length, 0);
+  assert.equal(t.discardHistory.length, 1);
+  const entry = t.discardHistory[0];
+  assert.equal(entry.sequence, 1);
+  assert.equal(entry.playerId, t.players[0].id);
+  assert.equal(entry.claimType, "pong");
+  assert.equal(entry.claimedBy, t.players[3].name);
+  assert.equal(entry.tile.id, played.id);
+  const view = t.view(t.players[0].id);
+  view.discardHistory[0].name = "修改";
+  view.discardHistory[0].tile.rank = 1;
+  assert.equal(entry.name, "玩家0");
+  assert.equal(entry.tile.rank, 9);
+  t.finish();
+  t.start();
+  assert.deepEqual(t.discardHistory, []);
+});
+
+test("点炮胡牌在完整出牌记录中标记胡牌玩家", () => {
+  const t = discardFixture();
+  t.action(t.players[0].id, {
+    type: "discard",
+    tile: t.players[0].tiles[0].id,
+  });
+  t.action(t.players[1].id, { type: "hu" });
+  assert.equal(t.discardHistory[0].claimType, "hu");
+  assert.equal(t.discardHistory[0].claimedBy, t.players[1].name);
+});

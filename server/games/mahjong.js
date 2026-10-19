@@ -139,6 +139,7 @@ export class MahjongTable {
     this.result = [];
     this.wall = [];
     this.discards = [];
+    this.discardHistory = [];
     this.lastDiscard = null;
     this.dealer = -1;
     this.nextDealer = 0;
@@ -193,6 +194,7 @@ export class MahjongTable {
     this.dealer = this.nextDealer % 4;
     this.wall = deck();
     this.discards = [];
+    this.discardHistory = [];
     this.claims = [];
     this.lastDiscard = null;
     this.result = [];
@@ -302,6 +304,11 @@ export class MahjongTable {
       });
       this.discards.pop();
       this.lastDiscard.claimed = true;
+      const record = this.discardHistory.at(-1);
+      if (record) {
+        record.claimType = input.type;
+        record.claimedBy = p.name;
+      }
       this.claims = [];
       this.stage = "playing";
       p.action = input.type === "kong" ? "明杠" : "碰";
@@ -345,6 +352,14 @@ export class MahjongTable {
       name: p.name,
       claimed: false,
     };
+    this.discardHistory.push({
+      sequence: this.discardHistory.length + 1,
+      playerId: p.id,
+      name: p.name,
+      tile,
+      claimType: null,
+      claimedBy: null,
+    });
     p.action = `打 ${tile.rank}${suitNames[tile.suit]}`;
     this.log(`${p.name} · ${p.action}`);
     this.version++;
@@ -406,6 +421,10 @@ export class MahjongTable {
       if (!scoring) throw new Error("当前手牌不能胡牌");
       this.score = this.baseStake * scoring.multiplier;
       const selfDraw = discarder === null;
+      if (!selfDraw && this.discardHistory.at(-1)) {
+        this.discardHistory.at(-1).claimType = "hu";
+        this.discardHistory.at(-1).claimedBy = p.name;
+      }
       const payment = this.score + (selfDraw ? this.baseStake : 0);
       for (let i = 0; i < 4; i++)
         if (i !== winner && (selfDraw || i === discarder)) {
@@ -524,6 +543,10 @@ export class MahjongTable {
       dealer: this.dealer,
       wallRemaining: this.wall.length,
       discards: this.discards,
+      discardHistory: this.discardHistory.map((record) => ({
+        ...record,
+        tile: { ...record.tile },
+      })),
       lastDiscard: this.lastDiscard,
       outcome: this.outcome,
       score: this.score,
