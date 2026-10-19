@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#17101f" />
     <meta
       name="description"
-      content="Kawaii Casino — 和朋友围坐一桌，享受像素风德州扑克。支持局域网多人联机。"
+      content="Kawaii Casino — 和朋友围坐一桌，享受像素风德州扑克、21点、斗地主、麻将和掼蛋。支持局域网多人联机。"
     />
     <title>Kawaii Casino · 今晚，来一手</title>
     <link rel="icon" href="/favicon.svg" />
@@ -19,7 +19,7 @@
         ><span>KAWAII<span class="brand-sub">CASINO CLUB</span></span></a
       >
       <nav aria-label="游戏">
-        <span class="nav-active">德州扑克 <i>TEXAS HOLD’EM</i></span
+        <span class="nav-active" id="game-name">游戏大厅</span
         ><span class="coming">更多游戏 <small>SOON</small></span>
       </nav>
       <div class="connection">
@@ -31,7 +31,7 @@
       </div>
     </header>
     <main class="layout">
-      <section class="game" aria-label="德州扑克牌桌">
+      <section class="game" aria-label="游戏牌桌">
         <div class="table-toolbar">
           <div>
             <span class="live-tag">FRIENDS TABLE</span
@@ -86,11 +86,15 @@
           <div class="pot-total">
             <span class="chip-icon">✦</span>
             <div>
-              <small>TOTAL POT · 总底池</small><strong id="pot-value">0</strong>
+              <small id="pot-caption">TOTAL POT · 总底池</small
+              ><strong id="pot-value">0</strong>
             </div>
           </div>
           <div class="table-stats">
-            <div><small>盲注</small><b id="blind-value">50 / 100</b></div>
+            <div>
+              <small id="blind-caption">盲注</small
+              ><b id="blind-value">50 / 100</b>
+            </div>
             <div><small>我的筹码</small><b id="stack-value">—</b></div>
             <div><small>在线玩家</small><b id="players-value">0 / 8</b></div>
           </div>
@@ -164,7 +168,18 @@
           />
         </div>
         <div id="create-fields" class="form-grid">
-          <div>
+          <div class="game-select-field">
+            <label for="game-select">选择游戏</label
+            ><select id="game-select">
+              <option value="poker">德州扑克</option>
+              <option value="blackjack">21点</option>
+              <option value="doudizhu">斗地主</option>
+              <option value="mahjong">麻将</option>
+              <option value="guandan">掼蛋</option>
+            </select>
+            <p id="game-rules-tip" class="game-rules-tip" hidden></p>
+          </div>
+          <div id="blind-fields">
             <label for="blind-select">小盲 / 大盲</label
             ><select id="blind-select">
               <option value="25">25 / 50 · 轻松局</option>
@@ -214,6 +229,129 @@
       </p>
       <p class="muted">
         房间保存在启动服务的电脑内存中，重启会清空。游戏只使用虚拟积分。
+      </p>
+      <button class="primary wide" data-close>明白了，入座吧 ♠</button>
+    </dialog>
+    <dialog id="blackjack-rules-dialog">
+      <button class="dialog-close" data-close aria-label="关闭">×</button>
+      <span class="eyebrow">BLACKJACK · 21</span>
+      <h1>21点，刚刚好。</h1>
+      <p>
+        1–5 位玩家对抗自动庄家。六副牌，剩余不足 25% 时在下一手洗牌。A 算 1 或
+        11，J/Q/K 算 10；庄家软 17 停牌。
+      </p>
+      <ol class="rules-list">
+        <li>
+          <b>先下注，再发牌</b
+          ><span
+            >每手最低 10，可下注至全部筹码。普通获胜净赢 1 倍；原手黑杰克净赢
+            1.5 倍（向下取整）；平局退注，爆牌即输。</span
+          >
+        </li>
+        <li>
+          <b>要牌 / 停牌 / 加倍</b
+          ><span
+            >首两张且筹码足够时可加倍，再拿一张后停牌。每次限时 35
+            秒，超时停牌；下注超时下最低注。</span
+          >
+        </li>
+        <li>
+          <b>分牌一次</b
+          ><span
+            >相同牌面（如两张 Q）可再付一份注拆成两手；不能再次分牌。分 A
+            后每手只补一张；分牌后的 21 点按普通获胜结算。允许分牌后加倍（分 A
+            除外）。</span
+          >
+        </li>
+      </ol>
+      <p class="muted">
+        庄家发牌后检查黑杰克。不设保险或投降。离桌时已下注手牌自动停牌；补充筹码在每手结束后进行。每手显示返还与净盈亏，庄家累计净盈亏可为负数。
+      </p>
+      <button class="primary wide" data-close>明白了，入座吧 ♠</button>
+    </dialog>
+    <dialog id="doudizhu-rules-dialog">
+      <button class="dialog-close" data-close aria-label="关闭">×</button>
+      <span class="eyebrow">DOU DIZHU · 3 PLAYERS</span>
+      <h1>斗地主，搭个伴。</h1>
+      <p>
+        3 人各发 17 张，另留 3 张底牌。轮流叫 1 / 2 / 3 分或不叫，每人一次，3
+        分立即结束。全不叫重发，最多重发 3 次，再全不叫则首叫者强制 1
+        分地主。地主收下并公开底牌，先出牌。
+      </p>
+      <p>
+        3 最小，依次至
+        A、2、小王、大王。支持单、对、三、三带一、三带一对、顺子（5
+        张起）、连对（3 对起）、飞机（2
+        组三张起，可带等组数单张或对子）、四带二单或两对、炸弹及王炸。顺子、连对及飞机主体不可含
+        2 或王。
+      </p>
+      <p>
+        同型同长度比主体点数；炸弹压普通牌，王炸最大。飞机翅膀不能与主体同点，单翅膀可重复点数，对翅膀需不同点数；四带二单允许一对。不出两次后，上次出牌者自由领出。任一人出完，所在阵营获胜。
+      </p>
+      <p>
+        每份 = 底分 10 × 叫分 × 2 的（炸弹数 +
+        王炸数）次方，春天再翻倍：地主胜且农民都未出过牌，或农民胜且地主仅出过一次。地主胜收两家，农民胜各收地主一份。输家按余额封顶；地主不足两份时实际付款均分，奇数按座位给前一位农民。无庄家、无额外加倍或明牌玩法。
+      </p>
+      <p class="muted">
+        至少 10 筹码才能开局。点选手牌后按「出牌」，也可「帮我一步」。每步 35
+        秒，超时不叫 /
+        不出，自由领出时打最小单张。离桌本手保留座位自动行动并结算，结束后移除；补码复用「补充筹码」。
+      </p>
+      <button class="primary wide" data-close>明白了，入座吧 ♠</button>
+    </dialog>
+    <dialog id="mahjong-rules-dialog">
+      <button class="dialog-close" data-close aria-label="关闭">×</button>
+      <span class="eyebrow">MAHJONG · 四人围坐</span>
+      <h1>简化四川麻将</h1>
+      <p>
+        4 人、108 张万条筒，无字无花。庄家 14 张，闲家 13
+        张；首局一号座坐庄，之后赢家坐庄，流局下家坐庄。先定缺，有缺门牌必须先打缺，未清缺不能胡。不吃，可碰、明杠、加杠、暗杠；杠后从牌墙尾补一张。
+      </p>
+      <p>
+        四组顺子/刻子（杠算一组）加一对，或七对可胡。胡优先于碰杠，多人胡按出牌者下家起截胡；第一位胡牌即结束，不血战。平胡
+        1 倍（加番起点 0），对对胡 +1、清一色 +2、七对 +2、每杠 +1、杠上开花
+        +1，累计最多 3 番即 8 倍。底分 10 × 倍数；自摸三家各付再加底分
+        10，点炮仅出牌者付。各家按余额封顶，赢家只收实际付款。
+      </p>
+      <p class="muted">
+        不换三张、不抢杠胡、不一炮多响、不计刮风下雨或根/龙七对；四张可算两对但无额外番。胡牌窗口优先，再处理碰杠窗口，同级按座位顺序；每次最长
+        8
+        秒，超时过。最后一张打出仍可胡，否则流局不支付，不查叫/查花猪。普通行动
+        35 秒，超时定缺选最少花色，出牌选最小合法牌。可用「帮我一步」。至少 10
+        筹码开局，结束后可补码。
+      </p>
+      <button class="primary wide" data-close>明白了，入座吧 ♠</button>
+    </dialog>
+    <dialog id="guandan-rules-dialog">
+      <button class="dialog-close" data-close aria-label="关闭">×</button>
+      <span class="eyebrow">GUANDAN · 四人组队</span>
+      <h1>掼蛋，一起升级。</h1>
+      <p>
+        双副 108 张，每人 27 张；一、三号座对二、四号座，固定搭档。两队从 2
+        级开始，首手打 2，此后打上手赢家的级牌。级牌高于
+        A、低于小王大王；红桃级牌是逢人配，可替除王外任意牌，服务器自动选最高合法解释。
+      </p>
+      <p>
+        支持单张、对子、三张、三带二、恰好五张顺子、三连对、两连三张钢板、4–8
+        张炸弹、五张同花顺、四王天王炸。连续牌按原点数，A
+        可作首尾但不循环，级牌可参与，王不可参与。对子可为同色王对，三带二可带王对。同型比主体；炸弹张数优先，同花顺高于五张炸、低于六张炸，天王炸最大。
+      </p>
+      <p>
+        自由领出不可不出，其余人均不出后重新领出；上次出牌者已出完则由仍有牌的搭档接风，否则下个有牌者领出。首手一号座先出，之后上手头游先出；跳过已出完者，第三人出完后余下一人为第四名（双下也继续确定名次）。
+      </p>
+      <p>
+        头游队占前两名升 3 级，占第一/三名升 2 级，占第一/四名升 1
+        级。无进贡/还贡，不设其他地区玩法；级别最高 A，即使在 A
+        级获胜也继续开手，不宣布整场结束。
+      </p>
+      <p>
+        底分 10，输家每人付底分 × 升级数，两位赢家均分实收；满额时双下每人净
+        ±30。输家最多付余额，奇数余筹给座位靠前的赢家，无庄家、不透支、严格零和。开局每人至少
+        10，结束后可补码；练习伙伴不自动补码。
+      </p>
+      <p class="muted">
+        点击选牌再「出牌」，或「帮我一步」。每步 35
+        秒，超时不出，领出时出最小单张。离桌保留本手座位自动完成并结算，补位继承空座所属队伍。
       </p>
       <button class="primary wide" data-close>明白了，入座吧 ♠</button>
     </dialog>

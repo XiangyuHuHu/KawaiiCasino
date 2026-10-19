@@ -1774,9 +1774,476 @@ dialog .muted {
   left: auto;
   right: 85%;
 }
+.game-select-field {
+  grid-column: 1 / -1;
+}
+.game-rules-tip {
+  margin: 8px 0 0;
+  color: #bca5cd;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.blackjack .board-area {
+  top: 5%;
+  width: 90%;
+}
+.blackjack .table-wordmark {
+  display: none;
+}
+.blackjack #seats {
+  position: absolute;
+  inset: 40% 4% 6%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  overflow-y: auto;
+  align-content: start;
+}
+.bj-seat {
+  min-width: 0;
+  background: #24192fed;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 10px;
+  font-size: 10px;
+}
+.bj-seat.me {
+  border-color: var(--lavender);
+}
+.bj-seat.current {
+  box-shadow: inset 0 0 0 2px var(--mint);
+}
+.bj-player {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.bj-player .avatar {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+.bj-player .avatar svg {
+  width: 28px;
+  height: 28px;
+}
+.bj-player .seat-name {
+  margin: 0 0 4px;
+  max-width: none;
+}
+.bj-player small {
+  color: var(--muted);
+}
+.bj-hands {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+.bj-hand {
+  min-width: 0;
+  width: 100%;
+  padding: 4px 0;
+  line-height: 1.8;
+}
+.bj-hand.active {
+  border-bottom: 1px solid var(--mint);
+}
+.bj-cards {
+  display: flex;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.bj-cards .card {
+  width: 30px;
+  height: 43px;
+  flex-shrink: 0;
+  padding: 3px;
+}
+.bj-cards .card + .card {
+  margin-left: -7px;
+}
+.bj-cards .rank {
+  font-size: 14px;
+}
+.bj-cards .suit {
+  font-size: 10px;
+}
+.bj-cards .center-suit,
+.bj-cards .card-corner {
+  display: none;
+}
+.bj-outcome {
+  color: var(--gold);
+}
+@media (max-width: 520px) {
+  .blackjack #seats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    inset: 33% 4% 6%;
+  }
+  .blackjack .board-status {
+    margin-bottom: 6px;
+  }
+  .blackjack .hand-hint {
+    font-size: 9px;
+  }
+  .bj-seat {
+    padding: 8px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
     animation: none !important;
+  }
+}
+
+.doudizhu .table-wordmark {
+  display: none;
+}
+.table-scene.doudizhu {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+  height: auto;
+  max-height: none;
+  padding: 20px 14px 36px;
+}
+.doudizhu .board-area {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  width: 100%;
+}
+.doudizhu #seats {
+  position: relative;
+  inset: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  overflow: visible;
+  align-content: start;
+}
+.ddz-seat.me {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+.ddz-bottom,
+.ddz-cards {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+.ddz-bottom {
+  justify-content: center;
+  margin: 6px 0;
+  font-size: 10px;
+}
+.ddz-cards .card,
+.ddz-bottom .card {
+  width: 31px;
+  height: 44px;
+  padding: 3px;
+  flex-shrink: 0;
+}
+.ddz-cards .rank,
+.ddz-bottom .rank {
+  font-size: 13px;
+  white-space: nowrap;
+}
+.ddz-cards .card[aria-label*="王"] .rank,
+.ddz-bottom .card[aria-label*="王"] .rank {
+  font-size: 9px;
+}
+.ddz-cards .suit,
+.ddz-bottom .suit {
+  font-size: 10px;
+}
+.ddz-cards .center-suit,
+.ddz-cards .card-corner,
+.ddz-bottom .center-suit,
+.ddz-bottom .card-corner {
+  display: none;
+}
+.ddz-last {
+  font-size: 11px;
+  min-height: 62px;
+}
+.ddz-last .ddz-cards {
+  justify-content: center;
+  margin-top: 5px;
+  gap: 1px;
+}
+.ddz-last .card + .card {
+  margin-left: -7px;
+}
+.ddz-hand {
+  margin-top: 6px;
+  padding-top: 7px;
+  gap: 3px;
+}
+.ddz-card {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  border-radius: 4px;
+  min-height: 0;
+}
+.ddz-card .card {
+  transition: transform 0.1s;
+}
+.ddz-card.selected .card {
+  transform: translateY(-6px);
+  box-shadow: 0 0 0 2px var(--mint);
+}
+.ddz-card:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.ddz-count {
+  color: var(--muted);
+  font-size: 12px;
+}
+.doudizhu .result-banner {
+  font-size: 11px;
+  margin-top: 5px;
+  padding: 5px;
+}
+@media (max-width: 520px) {
+  .doudizhu .board-status {
+    font-size: 10px;
+    margin-bottom: 5px;
+  }
+  .ddz-seat {
+    padding: 6px;
+  }
+  .ddz-seat .seat-name {
+    font-size: 10px;
+    overflow-wrap: anywhere;
+  }
+  .ddz-seat .seat-stack {
+    font-size: 9px;
+  }
+  .ddz-seat .bj-player {
+    gap: 4px;
+  }
+  .ddz-seat .avatar {
+    width: 24px;
+    height: 24px;
+  }
+  .ddz-seat .avatar svg {
+    width: 22px;
+    height: 22px;
+  }
+  .ddz-hand {
+    gap: 2px;
+  }
+  .ddz-hand .card {
+    width: 26px;
+    height: 37px;
+  }
+  .ddz-last .card {
+    width: 26px;
+    height: 37px;
+  }
+  .ddz-last {
+    min-height: 54px;
+  }
+}
+
+.mahjong .table-wordmark {
+  display: none;
+}
+.table-scene.mahjong {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  height: auto;
+  max-height: none;
+  padding: 20px 14px 30px;
+}
+.mahjong .board-area {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  width: 100%;
+}
+.mahjong #seats {
+  position: relative;
+  inset: auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  align-content: start;
+}
+.mj-seat {
+  min-width: 0;
+}
+.mj-seat.me {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+.mj-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  align-items: center;
+}
+.mj-tile {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 42px;
+  border: 2px solid #c5b9d6;
+  border-bottom: 5px solid #9887b4;
+  border-radius: 3px;
+  background: #fff5e5;
+  color: #ad4169;
+  font-size: 12px;
+  line-height: 1.1;
+  box-shadow: 2px 2px 0 #30233e;
+}
+.mj-tile b {
+  font-size: 17px;
+}
+.mj-tile.tiao {
+  color: #277b62;
+}
+.mj-tile.tong {
+  color: #5556a9;
+}
+.mj-tile.back {
+  color: var(--mint);
+  background: #685384;
+}
+.mj-last {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  font-size: 12px;
+}
+.mj-hand {
+  margin-top: 9px;
+  padding-top: 7px;
+}
+.mj-select {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  min-height: 0;
+  border-radius: 3px;
+}
+.mj-select:disabled {
+  opacity: 1;
+}
+.mj-select.selected .mj-tile {
+  transform: translateY(-5px);
+  outline: 2px solid var(--mint);
+}
+.mj-select.void-tile .mj-tile {
+  border-color: var(--gold);
+}
+.mj-melds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.mj-melds small {
+  font-size: 9px;
+}
+.mj-melds .mj-tile,
+.mj-river .mj-tile {
+  width: 22px;
+  height: 31px;
+  font-size: 9px;
+}
+.mj-melds .mj-tile b,
+.mj-river .mj-tile b {
+  font-size: 12px;
+}
+.mj-river {
+  font-size: 11px;
+  margin-top: 8px;
+}
+.mj-river .mj-tiles {
+  justify-content: center;
+  padding: 8px 0;
+}
+.mahjong .result-banner {
+  font-size: 11px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 520px) {
+  .mahjong #seats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .mj-seat.me {
+    grid-row: 3;
+  }
+  .mj-seat {
+    padding: 7px;
+  }
+  .mj-seat .seat-name {
+    font-size: 10px;
+    overflow-wrap: anywhere;
+  }
+  .mj-seat .seat-stack {
+    font-size: 9px;
+  }
+  .mj-seat .bj-player {
+    gap: 4px;
+  }
+  .mj-seat .avatar {
+    width: 24px;
+    height: 24px;
+  }
+  .mj-seat .avatar svg {
+    width: 22px;
+    height: 22px;
+  }
+  .mj-hand .mj-tile {
+    width: 27px;
+    height: 39px;
+  }
+  .mahjong .board-status {
+    font-size: 10px;
+  }
+}
+
+.guandan #seats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.gd-seat {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.gd-seat .bj-player > div {
+  min-width: 0;
+}
+.gd-levels,
+.gd-order {
+  color: var(--muted);
+  font-size: 11px;
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.gd-wild .card {
+  box-shadow: 0 0 0 1px var(--gold);
+}
+@media (max-width: 520px) {
+  .gd-seat:not(.me) .bj-player {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
