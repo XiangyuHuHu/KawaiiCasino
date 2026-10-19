@@ -19,6 +19,7 @@ for (const [gameType, name, seats, selector] of [
   ["doudizhu", "斗地主", 3, ".ddz-seat"],
   ["mahjong", "麻将", 4, ".mj-seat"],
   ["guandan", "掼蛋", 4, ".gd-seat"],
+  ["roulette", "轮盘", 8, ".rl-seat"],
 ])
   test(`${name}：更多游戏入口、自动补满机器人、刷新恢复`, async ({ page }) => {
     const errors = [];
@@ -26,7 +27,7 @@ for (const [gameType, name, seats, selector] of [
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
     await page.getByRole("button", { name: "更多游戏" }).click();
-    await expect(page.locator("[data-pick-game]")).toHaveCount(5);
+    await expect(page.locator("[data-pick-game]")).toHaveCount(6);
     await page.locator(`[data-pick-game="${gameType}"]`).click();
     await expect(page.locator("#game-select")).toHaveValue(gameType);
     await page.getByLabel("你的昵称").fill("快乐单人");

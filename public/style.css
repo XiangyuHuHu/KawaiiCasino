@@ -2665,3 +2665,243 @@ dialog .muted {
     line-height: 1.7;
   }
 }
+
+/* Calculator and public-information probability tools. */
+#calculator-dialog {
+  width: min(1180px, 96vw);
+  max-width: 96vw;
+}
+.calculator-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 18px 0;
+}
+.calculator-tabs [aria-pressed="true"] {
+  background: #624672;
+  border-color: var(--lavender);
+}
+.algorithm-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+.algorithm-cards article {
+  padding: 18px;
+  border: 1px solid #b59ac433;
+  border-radius: 12px;
+  background: #ffffff05;
+}
+.algorithm-cards p,
+#calculator-intro > p {
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--muted);
+}
+.calculator-frame {
+  width: 100%;
+  height: 72dvh;
+  border: 1px solid #b59ac433;
+  border-radius: 12px;
+  background: #14121c;
+}
+.probability-panel {
+  margin-top: 16px;
+  padding: 20px;
+  background: linear-gradient(125deg, #2c2034, #211b2a);
+  border: 1px solid #a989bc40;
+  border-radius: 14px;
+}
+.prob-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.prob-heading h3 {
+  font-size: 15px;
+  margin: 6px 0;
+}
+.prob-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.prob-tools button,
+.prob-tools select {
+  width: auto;
+  font-size: 11px;
+  padding: 8px;
+}
+.prob-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.prob-metrics small {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.prob-metrics b {
+  color: var(--mint);
+  font-size: 22px;
+}
+.prob-note,
+.prob-error {
+  font-size: 11px;
+  line-height: 1.9;
+  margin: 12px 0 0;
+  color: var(--muted);
+}
+.prob-error {
+  color: #f0c398;
+}
+.prob-table-wrap {
+  overflow-x: auto;
+}
+.prob-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.prob-table th,
+.prob-table td {
+  padding: 9px;
+  text-align: right;
+  border-bottom: 1px solid #ffffff14;
+}
+.prob-table th:first-child {
+  text-align: left;
+}
+.gd-arrange-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  font-size: 11px;
+}
+.gd-arrange-toolbar select {
+  width: auto;
+  font-size: 12px;
+  padding: 7px;
+}
+.gd-arrange-toolbar small {
+  color: var(--muted);
+}
+.gd-group {
+  border: 1px solid #b59ac42b;
+  background: #ffffff04;
+  padding: 7px 5px;
+  border-radius: 7px;
+  max-width: 100%;
+}
+.gd-group > small {
+  display: block;
+  color: var(--lavender);
+  font-size: 10px;
+  margin-bottom: 9px;
+}
+.gd-seat.me .ddz-hand {
+  align-items: stretch;
+  gap: 8px;
+}
+.gd-group .ddz-cards {
+  gap: 2px;
+}
+.table-scene.roulette {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  height: auto;
+  max-height: none;
+  padding: 24px 16px;
+  background: radial-gradient(ellipse at top, #403045, #231c2c 75%);
+}
+.roulette .rail,
+.roulette .felt,
+.roulette .table-wordmark,
+.roulette .spark {
+  display: none;
+}
+.roulette .board-area {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  width: 100%;
+}
+.roulette-wheel {
+  display: block;
+  width: min(300px, 75%);
+  margin: 12px auto;
+  filter: drop-shadow(0 10px 15px #0006);
+}
+.roulette #seats {
+  position: relative;
+  inset: auto;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.rl-seat {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.rl-seat .bj-player {
+  gap: 8px;
+}
+.roulette-controls {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 0.8fr auto auto;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+.roulette-controls input,
+.roulette-controls select {
+  width: 100%;
+  min-width: 0;
+  font-size: 12px;
+}
+#roulette-fields .room-check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+#roulette-fields input[type="checkbox"] {
+  width: auto;
+}
+@media (max-width: 700px) {
+  .algorithm-cards {
+    grid-template-columns: 1fr;
+  }
+  .roulette #seats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .roulette-controls {
+    grid-template-columns: 1fr 1fr;
+  }
+  .roulette-controls #roulette-numbers {
+    grid-column: 2;
+  }
+  .prob-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .probability-panel {
+    padding: 14px;
+  }
+  #calculator-dialog {
+    padding: 22px 14px;
+  }
+  .calculator-frame {
+    height: 75dvh;
+  }
+}

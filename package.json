@@ -14,7 +14,7 @@
     "test:browser": "playwright test",
     "format": "prettier --write public server test playwright.config.js package.json .github/workflows/test.yml",
     "format:check": "prettier --check public server test playwright.config.js package.json .github/workflows/test.yml",
-    "check": "node --check server/index.js && node --check server/poker.js && node --check server/games/index.js && node --check server/games/poker.js && node --check server/games/blackjack.js && node --check public/app.js && node --check public/games/blackjack.js && node --check server/games/doudizhu.js && node --check public/games/doudizhu.js && node --check server/games/mahjong.js && node --check public/games/mahjong.js && node --check server/games/guandan.js && node --check public/games/guandan.js && node --check test/guandan.test.js"
+    "check": "node --check server/index.js && node --check server/poker.js && node --check server/games/index.js && node --check server/games/poker.js && node --check server/games/blackjack.js && node --check public/app.js && node --check public/games/blackjack.js && node --check server/games/doudizhu.js && node --check public/games/doudizhu.js && node --check server/games/mahjong.js && node --check public/games/mahjong.js && node --check server/games/guandan.js && node --check public/games/guandan.js && node --check test/guandan.test.js && node --check server/games/roulette.js && node --check public/games/roulette.js && node --check public/probability.js && node --check public/calculator/engine.js && node --check public/calculator/app.js && node --check public/calculator/live-input.js && node --check public/calculator/roulette-rules.js && node --check public/calculator/worker.js"
   },
   "dependencies": {
     "socket.io": "^4.8.1"

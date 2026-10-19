@@ -3,9 +3,22 @@ import { MahjongTable } from "./mahjong.js";
 import { PokerTable } from "./poker.js";
 import { BlackjackTable } from "./blackjack.js";
 import { DoudizhuTable } from "./doudizhu.js";
+import { RouletteTable } from "./roulette.js";
 
 // Register future games here; the room service only uses the engine contract.
 export const games = new Map([
+  [
+    "roulette",
+    {
+      Engine: RouletteTable,
+      name: "轮盘",
+      minPlayers: 1,
+      maxPlayers: 8,
+      bots: true,
+      practiceBots: 3,
+      blurb: "单零／双零／三零，支持号码及外围投注。各格等概率，结果独立。",
+    },
+  ],
   [
     "poker",
     {

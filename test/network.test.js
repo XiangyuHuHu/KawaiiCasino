@@ -210,7 +210,7 @@ test("21点 Socket.IO：注册表、机器人自动下注、完整结算、补�
     const metadata = await (await fetch(`${url}/api/games`)).json();
     assert.deepEqual(
       metadata.map((g) => g.gameType),
-      ["poker", "blackjack", "doudizhu", "mahjong", "guandan"],
+      ["roulette", "poker", "blackjack", "doudizhu", "mahjong", "guandan"],
     );
     assert.ok(
       metadata.every((g) => typeof g.blurb === "string" && g.blurb.length > 8),

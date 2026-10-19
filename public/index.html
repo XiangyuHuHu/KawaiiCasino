@@ -23,6 +23,7 @@
         ><button id="more-games-button" class="more-games-button">
           更多游戏 ▾
         </button>
+        <button id="calculator-button" class="more-games-button">计算器</button>
       </nav>
       <div class="connection">
         <span id="connection-dot" class="dot"></span
@@ -73,6 +74,12 @@
           </div>
         </div>
         <div id="action-area" class="action-area"></div>
+        <section
+          id="probability-panel"
+          class="probability-panel"
+          aria-label="当前牌面概率"
+          hidden
+        ></section>
         <footer class="game-footer">
           <span>♧ 仅限虚拟筹码 · 好玩就好</span
           ><span id="hand-label">NO PRESSURE, JUST POKER.</span>
@@ -159,6 +166,10 @@
         <option value="create">局域网多人 · 创建房间</option>
       </select>
       <div class="game-choices">
+        <button data-pick-game="roulette">
+          <span>◉</span><b>轮盘</b
+          ><small>单零／双零／三零 · 号码与外围投注</small>
+        </button>
         <button data-pick-game="poker">
           <span>♠</span><b>德州扑克</b
           ><small>单人 + 7 位机器人 / 2–8 人联机</small>
@@ -216,6 +227,7 @@
               <option value="doudizhu">斗地主</option>
               <option value="mahjong">麻将</option>
               <option value="guandan">掼蛋</option>
+              <option value="roulette">轮盘</option>
             </select>
             <p id="game-rules-tip" class="game-rules-tip" hidden></p>
           </div>
@@ -226,6 +238,19 @@
               <option value="50" selected>50 / 100 · 标准局</option>
               <option value="100">100 / 200 · 快节奏</option>
             </select>
+          </div>
+          <div id="roulette-fields" hidden>
+            <label for="roulette-wheel">轮盘规则</label
+            ><select id="roulette-wheel">
+              <option value="european">欧式单零 · 37格</option>
+              <option value="american">美式双零 · 38格</option>
+              <option value="triple">三零 · 39格</option></select
+            ><label class="room-check"
+              ><input
+                id="roulette-partage"
+                type="checkbox"
+              />欧式外围零点退半</label
+            >
           </div>
           <div>
             <label for="stack-select">初始筹码</label
@@ -242,6 +267,75 @@
         </button>
         <p class="form-note">2–8 人 · 无需注册 · 虚拟筹码</p>
       </form>
+    </dialog>
+    <dialog id="calculator-dialog">
+      <button class="dialog-close" data-close aria-label="关闭">×</button
+      ><span class="eyebrow">PROBABILITY LAB</span>
+      <h1>计算器与算法说明</h1>
+      <div class="calculator-tabs">
+        <button data-calculator-tab="intro" aria-pressed="true">算法介绍</button
+        ><button data-calculator-tab="manual" aria-pressed="false">
+          手动计算
+        </button>
+      </div>
+      <section id="calculator-intro">
+        <p>
+          手动输入轮盘、21点或德州场面，查看概率、期望收益和资金占用，支持 JSON
+          导出。手动输入偏好仅保存在浏览器，不保存计算历史。
+        </p>
+        <div class="algorithm-cards">
+          <article>
+            <b>◉ 轮盘 · 精确概率</b>
+            <p>
+              单零37格、双零38格、三零39格。支持单号、分注、街注、角注、六线、十二数、列注、外围、美式五数和欧式零点退半。EV
+              = Σ 概率 ×
+              净收益，同时计算多轮期望、标准差和连续全损概率；每次结果独立。
+            </p>
+          </article>
+          <article>
+            <b>♠ 德州 · 枚举 / 蒙特卡洛</b>
+            <p>
+              7张取最强5张。合法场景不超过150,000时完整枚举，否则使用固定随机种子、无放回抽样。按平分份额计算摊牌权益，提供95%抽样误差界。局内默认3,000次，手动面板可提高精度；未知对手按均匀随机范围处理。
+            </p>
+          </article>
+          <article>
+            <b>21 点 · 有限牌靴递归</b>
+            <p>
+              按剩余牌组成精确递归，正确处理A的软硬转换，以及庄家检查黑杰克后的条件概率。要牌、停牌、加倍按期望净收益比较。超过120万状态或超时会明确停止；只有你手动选择时才使用无限牌靴近似。
+            </p>
+          </article>
+        </div>
+        <p class="muted">
+          局内只读取自身手牌与公开信息，不读取德州对手底牌、庄家暗牌或未来牌序。21点分牌不在原计算器的动作模型内；德州边池、未来下注、诈唬和真实对手范围不由该权益模型解决。凯利数值仅是模型参考，不是保证盈利或加注指令。
+        </p>
+        <p class="muted">
+          掼蛋组合插牌是基于自己手牌的启发式整理，提供均衡、保留炸弹、连牌优先三种风格；推荐选牌不会替你出牌，也不声称全局最优。
+        </p>
+        <button class="primary wide" data-calculator-tab="manual">
+          打开完整手动计算面板 ↗
+        </button>
+      </section>
+      <iframe
+        id="calculator-frame"
+        title="赌场概率计算器"
+        class="calculator-frame"
+        hidden
+      ></iframe>
+    </dialog>
+    <dialog id="roulette-rules-dialog">
+      <button class="dialog-close" data-close aria-label="关闭">×</button
+      ><span class="eyebrow">ROULETTE</span>
+      <h1>转盘，独立的一次好运。</h1>
+      <p>
+        每格等概率，下注确认后锁定。最后一位玩家下注后统一开盘，超时自动跳过。
+      </p>
+      <p>
+        单号净赔35:1，分注17:1，街注11:1，角注8:1，六线5:1，十二数和列注2:1，红黑、单双、大小1:1。0／00／000不属于外围投注；美式五数净赔6:1。
+      </p>
+      <p>
+        分注等号码必须组成桌上相邻的合法区域。启用欧式零点退半时，1:1外围投注遇0退回一半，需用偶数筹码。转盘图为等概率示意；牌桌下方显示规则概率和期望。
+      </p>
+      <button class="primary wide" data-close>明白了 ↗</button>
     </dialog>
     <dialog id="rules-dialog">
       <button class="dialog-close" data-close aria-label="关闭">×</button

@@ -221,6 +221,43 @@ export function upgradeFor(order) {
   return { team, upgrade: 5 - partnerPlace };
 }
 
+// Deterministic disjoint grouping of this player's own cards. A heuristic,
+// not a globally minimal partition or a search of opponents' hidden cards.
+export function planHand(cards, level = 2, style = "balanced") {
+  let remaining = [...cards];
+  const groups = [];
+  for (let step = 0; remaining.length && step < 27; step++) {
+    const moves = legalMoves(remaining, null, level);
+    const protectedCards = new Set(
+      moves
+        .filter((m) => ["bomb", "rocket", "straightFlush"].includes(m.type))
+        .flatMap((m) => m.cards),
+    );
+    const merit = (move) => {
+      const special = ["bomb", "rocket", "straightFlush"].includes(move.type);
+      const chain = ["straight", "pairStraight", "plate"].includes(move.type);
+      const split = special
+        ? 0
+        : move.cards.filter((id) => protectedCards.has(id)).length;
+      return (
+        move.count * 10 -
+        move.main * 0.05 +
+        (style === "protect" && special ? 200 : 0) +
+        (style === "chains" && chain ? 60 : 0) -
+        split * (style === "protect" ? 30 : 8)
+      );
+    };
+    const move = moves.sort(
+      (a, b) => merit(b) - merit(a) || a.main - b.main,
+    )[0];
+    if (!move) throw new Error("手牌无法整理");
+    groups.push(move);
+    const used = new Set(move.cards);
+    remaining = remaining.filter((c) => !used.has(c.id));
+  }
+  return groups;
+}
+
 export class GuandanTable {
   constructor({ stack = 10000, actionTimeout = 35000 } = {}) {
     this.buyIn = stack;
@@ -483,6 +520,28 @@ export class GuandanTable {
   }
   view(id) {
     const revealed = this.stage === "showdown";
+    const mine = this.players.find((p) => p.id === id);
+    this.arrangementCache ||= new Map();
+    const key = `${this.level}:${mine?.cards.map((c) => c.id).join(",")}`;
+    if (mine && this.arrangementCache.get(id)?.key !== key)
+      this.arrangementCache.set(id, {
+        key,
+        plans: Object.fromEntries(
+          ["balanced", "protect", "chains"].map((style) => [
+            style,
+            planHand(mine.cards, this.level, style),
+          ]),
+        ),
+      });
+    const hints =
+      mine && this.legal(id)
+        ? legalMoves(mine.cards, this.lastPlay?.combo, this.level)
+        : [];
+    const finish = hints.find((m) => m.count === mine.cards.length);
+    const partnerLeads =
+      !!this.lastPlay &&
+      mine &&
+      this.players[this.lastPlay.playerIndex].seat % 2 === mine.seat % 2;
     return {
       stage: this.stage,
       hand: this.hand,
@@ -493,6 +552,18 @@ export class GuandanTable {
       deadline: this.deadline,
       pot: this.pot,
       legal: this.legal(id),
+      arrangements: mine ? this.arrangementCache.get(id).plans : {},
+      recommendation: {
+        preferPass: !!(partnerLeads && !finish),
+        reason:
+          partnerLeads && !finish
+            ? "搭档领出，建议保留手牌，不压搭档。"
+            : "优先较长、较低的合法组合；推荐只读取你的手牌。",
+        options: (finish
+          ? [finish, ...hints.filter((m) => m !== finish)]
+          : hints
+        ).slice(0, 8),
+      },
       teamLevels: [...this.teamLevels],
       level: this.level,
       winningTeam: this.winningTeam,

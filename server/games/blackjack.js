@@ -363,6 +363,7 @@ export class BlackjackTable {
           ? handValue(this.dealerCards)
           : null,
       shoeRemaining: this.cards.length,
+      exposedDiscards: this.discards.map((c) => ({ ...c })),
       houseNet: this.houseNet,
       roundHouseNet: this.roundHouseNet,
       history: this.history,

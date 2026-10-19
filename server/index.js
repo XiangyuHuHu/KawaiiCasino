@@ -9,6 +9,8 @@ import { games, gameMetadata } from "./games/index.js";
 
 const root = new URL("../public/", import.meta.url);
 const files = {
+  "/games/roulette.js": ["games/roulette.js", "text/javascript; charset=utf-8"],
+  "/probability.js": ["probability.js", "text/javascript; charset=utf-8"],
   "/games/guandan.js": ["games/guandan.js", "text/javascript; charset=utf-8"],
   "/": ["index.html", "text/html; charset=utf-8"],
   "/app.js": ["app.js", "text/javascript; charset=utf-8"],
@@ -21,6 +23,21 @@ const files = {
   "/style.css": ["style.css", "text/css; charset=utf-8"],
   "/favicon.svg": ["favicon.svg", "image/svg+xml"],
 };
+for (const name of [
+  "engine.js",
+  "app.js",
+  "worker.js",
+  "styles.css",
+  "live-input.js",
+  "roulette-rules.js",
+])
+  files[`/calculator/${name}`] = [
+    `calculator/${name}`,
+    name.endsWith(".css")
+      ? "text/css; charset=utf-8"
+      : "text/javascript; charset=utf-8",
+  ];
+files["/calculator/"] = ["calculator/index.html", "text/html; charset=utf-8"];
 const STALE_ACTION = "牌局已更新，请重新操作";
 const BURST_LIMIT = 40;
 // Host round controls stay available after a fast assist burst.
@@ -87,8 +104,7 @@ export function createCasino({
         "Content-Type": file[1],
         "X-Content-Type-Options": "nosniff",
         "Cache-Control": "no-cache",
-        "Content-Security-Policy":
-          "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+        "Content-Security-Policy": `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ws: wss:; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors ${pathname.startsWith("/calculator/") ? "'self'" : "'none'"}`,
       });
       res.end(data);
     } catch {
@@ -199,7 +215,13 @@ export function createCasino({
         code,
         gameType,
         mode: input.solo === true ? "solo" : "multiplayer",
-        table: new Engine({ smallBlind, stack, actionTimeout }),
+        table: new Engine({
+          smallBlind,
+          stack,
+          actionTimeout,
+          wheel: input.wheel || "european",
+          partage: input.partage === true,
+        }),
         messages: [],
         updated: Date.now(),
         hostId: null,

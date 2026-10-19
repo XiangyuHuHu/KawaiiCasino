@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="轮盘、21点与德州扑克的场面概率、期望收益和筹码分析。"
+    />
+    <title>赌场概率实验室 · Odds Lab</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2312181e'/%3E%3Ctext x='16' y='25' text-anchor='middle' font-size='28' fill='%23a4efd1'%3E%E2%99%A0%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="./"
+        ><span class="brand-mark">♠</span
+        ><span
+          >ODDS<span class="brand-light">LAB</span
+          ><small>赌场概率实验室</small></span
+        ></a
+      ><span class="local-status"><i></i> 本地计算 · 无需登录</span
+      ><a class="method-link" href="#methodology">计算依据 ↗</a>
+    </header>
+    <main class="shell">
+      <section class="intro">
+        <div>
+          <span class="eyebrow">PROBABILITY OVER INSTINCT</span>
+          <h1>让每一个决定，<br /><span>都有概率依据。</span></h1>
+          <p>输入场面与筹码，比较胜率、期望收益和资金占用。</p>
+        </div>
+        <div class="intro-note">
+          <span class="tiny">判断的核心</span><strong>胜率 ≠ 收益</strong>
+          <p>赔率、平局、抽水和游戏规则，<br />共同决定一笔下注的价值。</p>
+          <div class="formula">EV = Σ 概率 × 净收益</div>
+        </div>
+      </section>
+      <div class="workspace">
+        <aside class="bankroll-panel panel">
+          <div class="section-heading">
+            <span class="tiny">01 / BANKROLL</span
+            ><span class="chip-icon">◎</span>
+          </div>
+          <h2>你的筹码</h2>
+          <label for="bankroll">总筹码 / 可用资金</label>
+          <div class="amount-input">
+            <span>◈</span
+            ><input
+              id="bankroll"
+              type="number"
+              min="0.01"
+              step="any"
+              value="1000"
+              inputmode="decimal"
+            />
+          </div>
+          <p class="help">
+            轮盘与德扑：本次下注前可用资金。<br />21点：包含本局原始下注的总筹码。
+          </p>
+          <div class="quick-amounts">
+            <button type="button" data-bankroll="500">500</button
+            ><button type="button" data-bankroll="1000">1,000</button
+            ><button type="button" data-bankroll="5000">5,000</button>
+          </div>
+          <div class="bankroll-rule">
+            <span>资金占用提醒线</span
+            ><label class="limit-label"
+              ><input
+                id="riskLimit"
+                aria-label="资金占用提醒线百分比"
+                type="number"
+                min="1"
+                max="100"
+                step="1"
+                value="5"
+              />
+              %</label
+            >
+          </div>
+          <p class="help">仅用于提醒，不会改变概率或自动提高下注。</p>
+          <div class="side-note">
+            <span>记住这一点</span>
+            <p>
+              负期望下注不会因加注或追损变成正期望。无优势时，以盈利为目标的下注额为
+              <strong>0</strong>。
+            </p>
+          </div>
+          <div class="side-bottom">
+            <span class="tiny">PRIVATE BY DEFAULT</span>
+            <p>牌面计算在此浏览器运行。<br />输入只保存在本机浏览器。</p>
+          </div>
+        </aside>
+        <section class="calculator-panel panel">
+          <div class="section-heading">
+            <span class="tiny">02 / TABLE SETUP</span
+            ><span class="tiny">选择玩法</span>
+          </div>
+          <div class="tabs" role="tablist" aria-label="游戏类型">
+            <button
+              id="tab-roulette"
+              class="active"
+              role="tab"
+              aria-selected="true"
+              aria-controls="form-roulette"
+              data-game="roulette"
+            >
+              <span>◉</span> 轮盘</button
+            ><button
+              id="tab-blackjack"
+              role="tab"
+              aria-selected="false"
+              aria-controls="form-blackjack"
+              tabindex="-1"
+              data-game="blackjack"
+            >
+              <span>♣</span> 21点</button
+            ><button
+              id="tab-poker"
+              role="tab"
+              aria-selected="false"
+              aria-controls="form-poker"
+              tabindex="-1"
+              data-game="poker"
+            >
+              <span>♠</span> 德州扑克
+            </button>
+          </div>
+          <form
+            id="form-roulette"
+            role="tabpanel"
+            aria-labelledby="tab-roulette"
+            class="game-form"
+          >
+            <div class="form-title">
+              <h2>轮盘场面</h2>
+              <span class="pill">精确概率</span>
+            </div>
+            <p class="form-description">
+              每次旋转独立。历史号码不改变下一次的落点概率。
+            </p>
+            <div class="form-grid">
+              <label
+                >轮盘规则<select name="wheel">
+                  <option value="european">欧式 · 单零 / 37格</option>
+                  <option value="american">美式 · 双零 / 38格</option>
+                  <option value="triple">三零 · 39格</option>
+                </select></label
+              ><label
+                >投注类型<select name="bet">
+                  <option value="red">红色 · 18格 / 1:1</option>
+                  <option value="black">黑色 · 18格 / 1:1</option>
+                  <option value="odd">单数 · 18格 / 1:1</option>
+                  <option value="even">双数 · 18格 / 1:1</option>
+                  <option value="low">小数 1–18 · 1:1</option>
+                  <option value="high">大数 19–36 · 1:1</option>
+                  <option value="straight">单号 · 1格 / 35:1</option>
+                  <option value="split">分注 · 2格 / 17:1</option>
+                  <option value="street">街注 · 3格 / 11:1</option>
+                  <option value="corner">角注 · 4格 / 8:1</option>
+                  <option value="six">六线 · 6格 / 5:1</option>
+                  <option value="dozen">十二数 · 12格 / 2:1</option>
+                  <option value="column">列注 · 12格 / 2:1</option>
+                  <option value="basket">美式五数 · 5格 / 6:1</option>
+                </select></label
+              ><label
+                >单局下注<input
+                  name="stake"
+                  type="number"
+                  min="0.01"
+                  step="any"
+                  value="10"
+                  required /></label
+              ><label
+                >固定下注轮数<input
+                  name="rounds"
+                  type="number"
+                  min="1"
+                  max="10000"
+                  step="1"
+                  value="100"
+                  required
+              /></label>
+            </div>
+            <label class="check"
+              ><input name="partage" type="checkbox" /><span
+                >La Partage · 遇0退还一半<span class="help"
+                  >仅适用于单零轮盘的 1:1 投注；不模拟 En Prison。</span
+                ></span
+              ></label
+            >
+            <div class="roulette-visual" aria-hidden="true">
+              <span class="zero">0</span><span class="red">32</span
+              ><span>15</span><span class="red">19</span><span>4</span
+              ><span class="red">21</span><span>2</span
+              ><span class="red">25</span><span>17</span
+              ><span class="red">34</span><span>6</span
+              ><small>公平轮盘 · 各格等概率</small>
+            </div>
+          </form>
+          <form
+            id="form-blackjack"
+            role="tabpanel"
+            aria-labelledby="tab-blackjack"
+            class="game-form"
+            hidden
+          >
+            <div class="form-title">
+              <h2>21点场面</h2>
+              <span class="pill">有限牌靴递归</span>
+            </div>
+            <p class="form-description">
+              比较当前已下注局面的动作。牌值用空格分隔，如 A 7。
+            </p>
+            <div class="form-grid">
+              <label
+                >自己的牌<input
+                  name="player"
+                  value="10 6"
+                  placeholder="例如 A 7"
+                  required
+                  autocomplete="off" /><span
+                  class="cards-preview"
+                  data-preview="ranks"
+                ></span></label
+              ><label
+                >庄家明牌<input
+                  name="dealer"
+                  value="10"
+                  placeholder="例如 A"
+                  required
+                  autocomplete="off" /><span
+                  class="cards-preview"
+                  data-preview="ranks"
+                ></span></label
+              ><label
+                >本局原始下注<input
+                  name="stake"
+                  type="number"
+                  min="0.01"
+                  step="any"
+                  value="10"
+                  required /></label
+              ><label
+                >牌靴副数<select name="decks">
+                  <option value="1">1副 / 52张</option>
+                  <option value="2">2副 / 104张</option>
+                  <option value="4">4副 / 208张</option>
+                  <option value="6" selected>6副 / 312张</option>
+                  <option value="8">8副 / 416张</option>
+                </select></label
+              ><label
+                >庄家软17<select name="h17">
+                  <option value="false">S17 · 软17停牌</option>
+                  <option value="true">H17 · 软17要牌</option>
+                </select></label
+              ><label
+                >自然21点赔付<select name="payout">
+                  <option value="1.5">3:2 · 净赢1.5倍</option>
+                  <option value="1.2">6:5 · 净赢1.2倍</option>
+                </select></label
+              >
+            </div>
+            <label class="check"
+              ><input name="peek" type="checkbox" checked /><span
+                >庄家已检查，确认没有自然21点<span class="help"
+                  >仅在庄家明牌为A或10时影响概率；没检查请取消勾选。</span
+                ></span
+              ></label
+            >
+            <div class="check-row">
+              <label class="check"
+                ><input name="double" type="checkbox" checked /><span
+                  >首两张允许任意点数加倍</span
+                ></label
+              ><label class="check"
+                ><input name="surrender" type="checkbox" /><span
+                  >允许晚投降</span
+                ></label
+              >
+            </div>
+            <details>
+              <summary>历史已出现牌与计算模型</summary>
+              <label
+                >本牌靴内其他已出现的牌<textarea
+                  name="seen"
+                  rows="2"
+                  placeholder="例如 2 5 K A；不要重复输入当前手牌与庄家明牌"
+                ></textarea></label
+              ><label
+                >计算模型<select name="model">
+                  <option value="finite">
+                    有限牌靴 · 精确枚举，按实际剩余牌计算
+                  </option>
+                  <option value="infinite">
+                    无限牌靴 · 每次抽牌独立（数学近似）
+                  </option>
+                </select></label
+              >
+              <p class="help">
+                无限牌靴模型不利用历史牌。未检查自然21点时，按庄家自然21点导致加倍投注全部损失的规则计算。分牌和保险暂不支持。
+              </p>
+            </details>
+          </form>
+          <form
+            id="form-poker"
+            role="tabpanel"
+            aria-labelledby="tab-poker"
+            class="game-form"
+            hidden
+          >
+            <div class="form-title">
+              <h2>德州扑克场面</h2>
+              <span class="pill">枚举 / 有误差界的模拟</span>
+            </div>
+            <p class="form-description">
+              s 黑桃 · h 红心 · d 方块 · c 梅花。例：As Kh，也支持 A♠ K♥。
+            </p>
+            <div class="form-grid">
+              <label
+                >自己的手牌<input
+                  name="hero"
+                  value="As Ks"
+                  required
+                  autocomplete="off" /><span
+                  class="cards-preview"
+                  data-preview="cards"
+                ></span></label
+              ><label
+                >公共牌（0 / 3 / 4 / 5张）<input
+                  name="board"
+                  value="Qs Js 2d"
+                  autocomplete="off" /><span
+                  class="cards-preview"
+                  data-preview="cards"
+                ></span></label
+              ><label class="full"
+                >对手手牌 · 每行一位，最多7位<textarea
+                  name="opponents"
+                  rows="2"
+                  placeholder="Qh Qd&#10;?"
+                  required
+                >
+Qh Qd</textarea
+                ><span class="help"
+                  >输入 ?
+                  表示所有合法两张牌等概率。真实对手通常有更窄的范围。</span
+                ></label
+              ><label
+                >当前可争夺底池<input
+                  name="pot"
+                  type="number"
+                  min="0.01"
+                  step="any"
+                  value="100"
+                  required
+                /><span class="help"
+                  >包含对手本次下注，不含你待跟的金额；仅限你有资格争夺的同一底池。</span
+                ></label
+              ><label
+                >待跟注金额<input
+                  name="call"
+                  type="number"
+                  min="0"
+                  step="any"
+                  value="20"
+                  required
+                /><span class="help"
+                  >计算假设：跟注后直接摊牌，无后续下注或边池。</span
+                ></label
+              >
+            </div>
+            <details>
+              <summary>抽水、死牌与模拟精度</summary>
+              <div class="form-grid">
+                <label
+                  >抽水比例 %<input
+                    name="rake"
+                    type="number"
+                    min="0"
+                    max="20"
+                    step="any"
+                    value="0" /></label
+                ><label
+                  >抽水上限（0表示不抽水）<input
+                    name="rakeCap"
+                    type="number"
+                    min="0"
+                    step="any"
+                    value="100" /></label
+                ><label
+                  >模拟次数<select name="samples">
+                    <option value="10000">10,000 · 快速</option>
+                    <option value="50000" selected>50,000 · 标准</option>
+                    <option value="200000">200,000 · 更高精度</option>
+                    <option value="1000000">1,000,000 · 精细</option>
+                  </select></label
+                ><label
+                  >随机种子<input
+                    name="seed"
+                    type="number"
+                    min="0"
+                    max="4294967295"
+                    step="1"
+                    value="20261012" /></label
+                ><label class="full"
+                  >已知死牌<input
+                    name="dead"
+                    placeholder="例如 9h 3c"
+                    autocomplete="off"
+                /></label>
+              </div>
+              <p class="help">
+                场景数≤150,000时自动完整枚举；否则无放回抽样。95%误差界只描述模拟误差，不涵盖对手范围判断误差。
+              </p>
+            </details>
+          </form>
+          <div id="error" role="alert" hidden></div>
+          <div class="calculate-row">
+            <button
+              id="calculate"
+              class="primary"
+              type="submit"
+              form="form-roulette"
+            >
+              计算场面 <span>↗</span></button
+            ><button id="cancel" class="secondary" type="button" hidden>
+              取消计算</button
+            ><button id="example" class="text-button" type="button">
+              载入示例</button
+            ><span id="calculation-status" role="status"
+              >公平规则 · 明确假设</span
+            >
+          </div>
+        </section>
+        <section class="results-panel panel" aria-label="分析结果">
+          <div class="section-heading">
+            <span class="tiny">03 / ANALYSIS</span
+            ><span id="method-badge" class="pill">等待计算</span>
+          </div>
+          <div id="results" aria-live="polite">
+            <div class="empty-results">
+              <span>∑</span>
+              <h2>看清一笔下注的价值</h2>
+              <p>填写场面后点击计算，<br />查看胜率、净收益与筹码占用。</p>
+              <div class="empty-metrics">
+                <span>概率</span><span>期望</span><span>资金</span>
+              </div>
+            </div>
+          </div>
+          <button id="export" class="secondary export" type="button" hidden>
+            导出计算记录 ↓
+          </button>
+        </section>
+      </div>
+      <section id="methodology" class="methodology">
+        <div>
+          <span class="tiny">THE MATH BEHIND THE NUMBERS</span>
+          <h2>计算透明，假设明确。</h2>
+          <p>
+            精确计算指给定模型下的数值枚举，使用双精度浮点运算。<br />结果不是未来输赢的预测，也不承诺收益。
+          </p>
+        </div>
+        <div class="method-columns">
+          <article>
+            <span>01</span>
+            <h3>轮盘 · 数学期望</h3>
+            <p>
+              胜率=覆盖格数÷总格数。按净赔付逐项求和，包含零点半损和美式五数投注。
+            </p>
+            <a
+              href="https://wizardofodds.com/games/roulette/"
+              target="_blank"
+              rel="noopener noreferrer"
+              >规则参考：Wizard of Odds ↗</a
+            >
+          </article>
+          <article>
+            <span>02</span>
+            <h3>21点 · 条件递归</h3>
+            <p>
+              扣除已知牌，保留未知底牌的条件分布。要牌按后续最优要牌/停牌策略计算，当前不计算分牌。
+            </p>
+            <a
+              href="https://wizardofodds.com/games/blackjack/expected-values/"
+              target="_blank"
+              rel="noopener noreferrer"
+              >交叉核对：21点期望收益表 ↗</a
+            >
+          </article>
+          <article>
+            <span>03</span>
+            <h3>德扑 · 底池权益</h3>
+            <p>
+              7张牌取最优5张，计入多人平局分池。跟注EV=权益×抽水后底池−跟注额。
+            </p>
+            <a
+              href="https://www.pokerstars.com/poker/learn/lesson/pot-odds/"
+              target="_blank"
+              rel="noopener noreferrer"
+              >规则参考：PokerStars底池赔率 ↗</a
+            >
+          </article>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <span>ODDS LAB / 概率工具，不是盈利承诺</span
+      ><span>规则参考核对于 2026-10-12</span>
+    </footer>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
