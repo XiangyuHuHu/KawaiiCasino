@@ -726,6 +726,21 @@ button.secondary {
   color: #dfb2c5;
   border-color: #664358;
 }
+.action-buttons .allin {
+  background: #60394e;
+  border-color: #d48caa;
+  color: #ffe5cf;
+  font-weight: 700;
+}
+.allin span,
+.allin small {
+  display: block;
+}
+.allin small {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--gold);
+}
 .raise-control {
   display: flex;
   align-items: center;
@@ -738,6 +753,16 @@ button.secondary {
 }
 .action-area.playing {
   flex-wrap: wrap;
+}
+@media (max-width: 600px) {
+  .action-buttons.poker-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+  .poker-actions .raise-control {
+    min-width: 0;
+  }
 }
 .turn-info {
   color: var(--mint);
