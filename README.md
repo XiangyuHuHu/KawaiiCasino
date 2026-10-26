@@ -37,6 +37,8 @@
 
 在项目目录运行 `docker compose up -d --build --wait`，打开 **http://localhost:4399**。复制 `.env.example` 为 `.env` 后，按宿主机实际地址设置 `PUBLIC_URLS`，邀请页面会使用宿主机地址和发布端口。停止：`docker compose down`；查看日志：`docker compose logs --tail=50`。重建容器会清空内存中的房间。
 
+Windows 推荐双击 **`start-casino-docker.cmd`**：它会读取当前已连接的物理 Wi-Fi／以太网 IPv4 地址，跳过 VPN、虚拟网卡和断开的有线网卡，更新 `.env` 中的分享地址后启动 Docker。换网络、重启电脑或 DHCP 地址变化后再次运行，即可刷新邀请链接；默认仍用 4399，保留 `.env` 已设置的端口。重新创建容器会清空原来的房间，更新后请创建新房并重新分享。
+
 安装 [Node.js 22 或更高版本](https://nodejs.org/)。Windows 用户可以直接双击 **`start-casino.cmd`**，首次运行会安装依赖。
 
 也可以在终端运行：
@@ -61,6 +63,7 @@ npm start
 
 如果打不开：
 
+- Docker 部署时先运行 `start-casino-docker.cmd` 刷新地址；旧分享链接里的 IP 不会随 DHCP 自动变化。朋友设备应打开当前局域网 IP 的 **4399** 端口，不能用 `localhost`、Docker 容器 IP 或原生 Node 模式的 3000 端口。
 - 保持主机终端运行，确认两台设备在同一局域网。
 - 在 Windows 防火墙提示中允许 **Node.js 访问专用网络**。
 - 检查路由器是否启用了访客 Wi-Fi 或 AP/客户端隔离。
