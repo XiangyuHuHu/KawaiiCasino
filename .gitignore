@@ -4,4 +4,5 @@ playwright-report/
 .playwright-cli/
 *.log
 .env
+.runtime/
 .DS_Store

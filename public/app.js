@@ -430,23 +430,53 @@ function renderAvatars() {
     )
     .join("");
 }
+let inviteRequest = 0,
+  inviteRefreshTimer;
+async function refreshInvite() {
+  const request = ++inviteRequest,
+    code = state?.code;
+  if (!code) return false;
+  let addresses = [];
+  let error = "暂时无法获取局域网地址，请连接 Wi-Fi 后重试。";
+  try {
+    const response = await fetch("/api/addresses", { cache: "no-store" });
+    if (!response.ok) throw new Error("地址查询失败");
+    const data = await response.json();
+    addresses = data.addresses || [];
+    error = data.error || error;
+    if (
+      data.source !== "host" &&
+      !["localhost", "127.0.0.1", "[::1]", "::1"].includes(location.hostname)
+    )
+      addresses = [location.origin];
+  } catch {
+    // Do not replace a failed LAN lookup with a localhost or previously copied link.
+  }
+  if (request !== inviteRequest || state?.code !== code) return false;
+  const links = addresses.map((a) => `${a}/?room=${code}`);
+  inviteText = links.length
+    ? `来 Kawaii Casino 玩${state.game.name}！\n房间号：${code}\n同一 Wi-Fi 下打开：\n${links.join("\n")}`
+    : "";
+  $("#copy-invite").disabled = !links.length;
+  $("#invite-details").innerHTML =
+    `<div class="room-code-display"><small>房间号</small>${code}</div>${links.length ? links.map((link) => `<div class="invite-address"><a href="${esc(link)}">${esc(link)}</a></div>`).join("") : `<p role="status">${esc(error)}</p>`}`;
+  return links.length > 0;
+}
 async function showInvite() {
   if (!state) return;
-  let addresses = [];
-  try {
-    addresses = (await (await fetch("/api/addresses")).json()).addresses;
-  } catch {
-    /* use current host */
-  }
-  if (!["localhost", "127.0.0.1", "::1"].includes(location.hostname))
-    addresses = [location.origin];
-  if (!addresses.length) addresses = [location.origin];
-  const links = addresses.map((a) => `${a}/?room=${state.code}`);
-  inviteText = `来 Kawaii Casino 玩${state.game.name}！\n房间号：${state.code}\n同一 Wi-Fi 下打开：\n${links.join("\n")}`;
-  $("#invite-details").innerHTML =
-    `<div class="room-code-display"><small>房间号</small>${state.code}</div>${links.map((link) => `<div class="invite-address"><a href="${esc(link)}">${esc(link)}</a></div>`).join("")}`;
+  clearInterval(inviteRefreshTimer);
+  inviteText = "";
+  $("#copy-invite").disabled = true;
+  $("#invite-details").textContent = "正在获取当前网络地址…";
   $("#invite-dialog").showModal();
+  await refreshInvite();
+  if ($("#invite-dialog").open)
+    inviteRefreshTimer = setInterval(refreshInvite, 3000);
 }
+$("#invite-dialog").addEventListener("close", () => {
+  clearInterval(inviteRefreshTimer);
+  ++inviteRequest;
+});
 document.addEventListener("click", async (event) => {
   const button = event.target.closest("button");
   if (!button || button.disabled) return;
@@ -709,6 +739,7 @@ document.addEventListener("input", (event) => {
 });
 $("#invite-button").onclick = showInvite;
 $("#copy-invite").onclick = async () => {
+  if (!(await refreshInvite())) return;
   try {
     await navigator.clipboard.writeText(inviteText);
     toast("邀请信息已复制。");

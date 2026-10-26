@@ -3,6 +3,7 @@ node_modules
 .github
 .env
 .env.*
+.runtime
 .playwright-cli
 test-results
 playwright-report

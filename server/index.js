@@ -6,6 +6,7 @@ import { networkInterfaces } from "node:os";
 import { randomBytes, randomInt } from "node:crypto";
 import { Server } from "socket.io";
 import { games, gameMetadata } from "./games/index.js";
+import { readHostAddresses } from "./lan-addresses.js";
 
 const root = new URL("../public/", import.meta.url);
 const files = {
@@ -53,6 +54,7 @@ function envMillis(name, fallback) {
 
 export function createCasino({
   publicUrls = process.env.PUBLIC_URLS || "",
+  hostAddressesFile = process.env.HOST_ADDRESSES_FILE || "",
   botDelay = envMillis("BOT_DELAY_MS", 1000),
   tickInterval = 300,
   actionTimeout = envMillis("ACTION_TIMEOUT_MS", 35000),
@@ -83,6 +85,15 @@ export function createCasino({
       return res.end(JSON.stringify([...games.keys()].map(gameMetadata)));
     }
     if (pathname === "/api/addresses") {
+      if (hostAddressesFile) {
+        res.writeHead(200, {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store",
+        });
+        return res.end(
+          JSON.stringify(await readHostAddresses(hostAddressesFile)),
+        );
+      }
       const port = server.address()?.port;
       const addresses = advertisedAddresses.length
         ? advertisedAddresses
@@ -90,7 +101,10 @@ export function createCasino({
             .flat()
             .filter((n) => n.family === "IPv4" && !n.internal)
             .map((n) => `http://${n.address}:${port}`);
-      res.writeHead(200, { "Content-Type": "application/json" });
+      res.writeHead(200, {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+      });
       return res.end(JSON.stringify({ addresses }));
     }
     const file = files[pathname];

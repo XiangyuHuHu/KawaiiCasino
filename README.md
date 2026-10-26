@@ -35,9 +35,13 @@
 
 ### Docker
 
-在项目目录运行 `docker compose up -d --build --wait`，打开 **http://localhost:4399**。复制 `.env.example` 为 `.env` 后，按宿主机实际地址设置 `PUBLIC_URLS`，邀请页面会使用宿主机地址和发布端口。停止：`docker compose down`；查看日志：`docker compose logs --tail=50`。重建容器会清空内存中的房间。
+Windows 双击 **`start-casino-docker.cmd`**，打开 **http://localhost:4399**。无需填写本机 IP；端口由 `.env` 的 `CASINO_PORT` 设置，默认 4399。停止：`docker compose down`；查看日志：`docker compose logs --tail=50`。重建容器会清空内存中的房间。
 
-Windows 推荐双击 **`start-casino-docker.cmd`**：它会读取当前已连接的物理 Wi-Fi／以太网 IPv4 地址，跳过 VPN、虚拟网卡和断开的有线网卡，更新 `.env` 中的分享地址后启动 Docker。换网络、重启电脑或 DHCP 地址变化后再次运行，即可刷新邀请链接；默认仍用 4399，保留 `.env` 已设置的端口。重新创建容器会清空原来的房间，更新后请创建新房并重新分享。
+启动器会启动一个隐藏的宿主机地址同步进程，每 3 秒读取已连接的物理 Wi-Fi／以太网 IPv4，跳过 VPN、虚拟网卡和断开的有线网卡。Docker 只读挂载 `.runtime/lan`，每次查询邀请地址都读取新快照，不再把发现的 IP 写进 `.env`。换 Wi-Fi、插拔网线或 DHCP 地址变化后自动生效，不会因此重建容器或清空房间。重复运行启动器只保留一个同步进程；该进程持续到退出 Windows 登录，重新开机后运行启动器即可恢复。
+
+邀请窗口每 3 秒刷新，点击「复制邀请信息」前也重新查询；断网、同步停止超过 30 秒或读取失败时会提示并停止提供旧链接，不会把 `localhost` 或容器内部地址发给朋友。`localhost` 仅供房主在本机访问，朋友必须使用当前网络地址。已发出去的旧 IP 链接不会改变，换网后需重新复制邀请，朋友也需连接同一局域网。
+
+其他 Docker 宿主机或自定义域名部署可在 `.env` 设置 `HOST_ADDRESSES_FILE=` 关闭 Windows 同步读取，并显式配置 `PUBLIC_URLS`，然后运行 `docker compose up -d --build --wait`；原生 Node 模式默认每次枚举本机网卡。
 
 安装 [Node.js 22 或更高版本](https://nodejs.org/)。Windows 用户可以直接双击 **`start-casino.cmd`**，首次运行会安装依赖。
 
@@ -63,7 +67,7 @@ npm start
 
 如果打不开：
 
-- Docker 部署时先运行 `start-casino-docker.cmd` 刷新地址；旧分享链接里的 IP 不会随 DHCP 自动变化。朋友设备应打开当前局域网 IP 的 **4399** 端口，不能用 `localhost`、Docker 容器 IP 或原生 Node 模式的 3000 端口。
+- Windows Docker 部署通过 `start-casino-docker.cmd` 启动地址同步；切网后等待几秒再复制新邀请。朋友设备应打开当前局域网 IP 的 **4399** 端口，不能用 `localhost`、Docker 容器 IP 或原生 Node 模式的 3000 端口。
 - 保持主机终端运行，确认两台设备在同一局域网。
 - 在 Windows 防火墙提示中允许 **Node.js 访问专用网络**。
 - 检查路由器是否启用了访客 Wi-Fi 或 AP/客户端隔离。
